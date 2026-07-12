@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Indic script fonts for translator -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600&family=Noto+Sans+Bengali:wght@400;500&family=Noto+Sans+Tamil:wght@400;500&family=Noto+Sans+Telugu:wght@400;500&family=Noto+Sans+Gujarati:wght@400;500&family=Noto+Sans+Kannada:wght@400;500&family=Noto+Sans+Malayalam:wght@400;500&family=Noto+Sans+Oriya:wght@400;500&family=Noto+Sans+Gurmukhi:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 /* ============ DESIGN TOKENS ============ */
@@ -119,7 +121,7 @@ body{
 .hero-meta .k{color:var(--text-4)}
 
 /* ============ TABS ============ */
-.tabs{display:inline-flex;gap:4px;padding:5px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--r-md);align-self:flex-start}
+.tabs{display:inline-flex;gap:4px;padding:5px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--r-md);align-self:flex-start;flex-wrap:wrap}
 .tab-btn{
   padding:10px 22px;background:transparent;color:var(--text-2);
   font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;
@@ -146,7 +148,7 @@ body{
   -webkit-mask:linear-gradient(black,black) content-box,linear-gradient(black,black);
   -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;
 }
-.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap}
 .card-title{display:flex;align-items:center;gap:10px;font-family:'Sora',sans-serif;font-size:15px;font-weight:600;letter-spacing:-.01em}
 .card-title .ico{
   width:28px;height:28px;border-radius:var(--r-sm);background:var(--grad-soft);
@@ -441,6 +443,49 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all var(--dur-f
 .tier-col.featured .tier-value{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .tier-unit{font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace;letter-spacing:.05em}
 
+/* ============ TRANSLATOR ============ */
+#translation-panel .select-input{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%2300d9ff' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;
+}
+#translation-panel .btn-primary.loading{background:var(--grad)}
+.tr-langbar{display:grid;grid-template-columns:1fr auto 1fr;gap:var(--s-3);margin-bottom:var(--s-4);align-items:end}
+.tr-lang{display:flex;flex-direction:column;gap:6px}
+.tr-lang label{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--text-3)}
+.tr-swap{width:42px;height:42px;border-radius:var(--r-md);background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text-2);cursor:pointer;display:grid;place-items:center;font-size:18px;transition:all var(--dur) var(--ease)}
+.tr-swap:hover{transform:rotate(180deg) scale(1.05);border-color:var(--cyan);color:var(--cyan);background:rgba(0,217,255,.08)}
+.tr-swap:active{transform:rotate(180deg) scale(.95)}
+.tr-panels{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-4);margin-bottom:var(--s-4)}
+.tr-panel{background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-3) var(--s-4);display:flex;flex-direction:column;min-height:220px;transition:border-color var(--dur) var(--ease)}
+.tr-panel:focus-within{border-color:rgba(0,217,255,.25)}
+.tr-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s-2)}
+.tr-panel-head .tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-3)}
+.tr-detected{font-size:10px;color:var(--cyan);background:rgba(0,217,255,.08);border:1px solid rgba(0,217,255,.2);padding:2px 8px;border-radius:var(--r-pill);font-family:'JetBrains Mono',monospace;opacity:0;transition:opacity .25s}
+.tr-detected.show{opacity:1}
+.tr-panel textarea{flex:1;width:100%;resize:none;border:none;background:transparent;color:var(--text);font-family:'Noto Sans','Manrope',sans-serif;font-size:16px;line-height:1.55;min-height:140px;outline:none}
+.tr-panel textarea::placeholder{color:var(--text-4);font-style:italic}
+.tr-out{font-size:16px;line-height:1.55;white-space:pre-wrap;word-break:break-word;flex:1;min-height:140px;display:flex;align-items:flex-start;font-family:'Noto Sans','Manrope',sans-serif}
+.tr-out.empty{color:var(--text-4);font-style:italic;font-size:13px;align-items:center;justify-content:center;text-align:center}
+.tr-panel-foot{display:flex;align-items:center;justify-content:space-between;margin-top:var(--s-2);font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace}
+.tr-counter.warn{color:var(--amber)}
+.tr-counter.over{color:var(--rose);font-weight:600}
+.tr-adv summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:var(--s-2);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);padding:var(--s-2) 0;user-select:none}
+.tr-adv summary::-webkit-details-marker{display:none}
+.tr-adv summary .chev{transition:transform .3s var(--ease);color:var(--cyan)}
+.tr-adv[open] summary .chev{transform:rotate(90deg)}
+.tr-adv summary:hover{color:var(--text)}
+.tr-adv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-3);margin-top:var(--s-3)}
+.tr-actions{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);flex-wrap:wrap}
+.tr-hint{font-size:12px;color:var(--text-3);display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace}
+.tr-hint .dot{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint)}
+.tr-cors-input{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--r-md);padding:8px 12px;color:var(--text);font-size:12px;width:200px;font-family:inherit;transition:all var(--dur-fast) var(--ease)}
+.tr-cors-input:focus{outline:none;border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(0,217,255,.12)}
+.tr-cors-input::placeholder{color:var(--text-4)}
+#translation-panel .btn-ghost{background:var(--surface);border:1px solid var(--border);color:var(--text)}
+#translation-panel .btn-ghost:hover{background:var(--surface-hover);border-color:var(--border-strong)}
+@media(max-width:820px){.tr-panels{grid-template-columns:1fr}.tr-langbar{grid-template-columns:1fr 1fr}.tr-swap{grid-column:1/-1;justify-self:center}.tr-adv-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.tr-adv-grid{grid-template-columns:1fr}.tr-actions{flex-direction:column;align-items:stretch}}
+
 /* ============ FOOTER ============ */
 .footer{text-align:center;color:var(--text-4);font-size:12px;padding:30px 0 10px;font-family:'JetBrains Mono',monospace;letter-spacing:.05em}
 .footer .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:600}
@@ -504,6 +549,7 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all var(--dur-f
     <div class="hero-meta">
       <div class="row"><span class="k">TTS</span> · <span class="model">bulbul:v3</span></div>
       <div class="row"><span class="k">STT</span> · <span class="model">saaras:v3</span></div>
+      <div class="row"><span class="k">TRANSLATE</span> · <span class="model">mayura:v1</span></div>
       <div class="row"><span class="k">LANGS</span> · 11+ supported</div>
     </div>
   </section>
@@ -515,6 +561,9 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all var(--dur-f
     </button>
     <button class="tab-btn" data-tab="stt" role="tab" aria-selected="false">
       <i class="fas fa-microphone"></i> Speech to Text
+    </button>
+    <button class="tab-btn" data-tab="translation" role="tab" aria-selected="false">
+      <i class="fas fa-language"></i> Translation
     </button>
   </nav>
 
@@ -682,6 +731,125 @@ button{font-family:inherit;cursor:pointer;border:none;transition:all var(--dur-f
           <div class="stt-lang-grid" id="sttLangGrid"></div>
           <div class="lang-hint">Language codes are <strong>optional</strong>. When not specified or set to <code>unknown</code>, the model will automatically detect the input language and return a <code>language_probability</code> score indicating detection confidence.</div>
         </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==================== TRANSLATION PANEL ==================== -->
+  <div class="panel" id="translation-panel" role="tabpanel">
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="ico"><i class="fas fa-language"></i></span> Sarvam Mayura Translator
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <span class="card-sub">English ↔ 10 Indian languages · bidirectional</span>
+          <input id="tr_corsKey" class="tr-cors-input" type="password" placeholder="cors.sh key (optional)" autocomplete="off" />
+        </div>
+      </div>
+
+      <!-- Language bar -->
+      <div class="tr-langbar">
+        <div class="tr-lang">
+          <label for="tr_src">From</label>
+          <select id="tr_src" class="select-input"></select>
+        </div>
+        <button class="tr-swap" id="tr_swap" title="Swap languages" aria-label="Swap languages">⇄</button>
+        <div class="tr-lang">
+          <label for="tr_tgt">To</label>
+          <select id="tr_tgt" class="select-input"></select>
+        </div>
+      </div>
+
+      <!-- Text panels -->
+      <div class="tr-panels">
+        <div class="tr-panel">
+          <div class="tr-panel-head">
+            <span class="tag">Input</span>
+            <span class="tr-detected" id="tr_detected"></span>
+          </div>
+          <textarea id="tr_input" placeholder="Type or paste text here… (max 1000 chars)" spellcheck="false"></textarea>
+          <div class="tr-panel-foot">
+            <button class="icon-btn" id="tr_clearBtn" title="Clear" aria-label="Clear input"><i class="fas fa-eraser"></i></button>
+            <span class="tr-counter" id="tr_counter">0 / 1000</span>
+          </div>
+        </div>
+
+        <div class="tr-panel">
+          <div class="tr-panel-head">
+            <span class="tag">Translation</span>
+            <button class="icon-btn" id="tr_copyBtn" title="Copy translation" aria-label="Copy translation"><i class="fas fa-copy"></i></button>
+          </div>
+          <div class="tr-out empty" id="tr_output">Your translation will appear here</div>
+          <div class="tr-panel-foot">
+            <span id="tr_outMeta">—</span>
+            <span id="tr_outChars"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advanced options -->
+      <details class="tr-adv" id="tr_adv">
+        <summary><span class="chev">▸</span> Advanced options</summary>
+        <div class="tr-adv-grid">
+          <div class="tr-lang">
+            <label for="tr_mode">Mode</label>
+            <select id="tr_mode" class="select-input">
+              <option value="formal" selected>Formal</option>
+              <option value="classic-colloquial">Classic-colloquial</option>
+              <option value="modern-colloquial">Modern-colloquial</option>
+            </select>
+          </div>
+          <div class="tr-lang">
+            <label for="tr_script">Output script</label>
+            <select id="tr_script" class="select-input">
+              <option value="" selected>Default</option>
+              <option value="roman">Roman</option>
+              <option value="fully-native">Fully-native</option>
+              <option value="spoken-form-in-native">Spoken-form-in-native</option>
+            </select>
+          </div>
+          <div class="tr-lang">
+            <label for="tr_numerals">Numerals</label>
+            <select id="tr_numerals" class="select-input">
+              <option value="international" selected>International (0-9)</option>
+              <option value="native">Native</option>
+            </select>
+          </div>
+          <div class="tr-lang">
+            <label for="tr_gender">Speaker gender</label>
+            <select id="tr_gender" class="select-input">
+              <option value="" selected>Default</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+        </div>
+      </details>
+
+      <!-- Actions -->
+      <div class="tr-actions" style="margin-top:var(--s-4);">
+        <div class="tr-hint"><span class="dot"></span> Model: <strong>mayura:v1</strong> · 1000-char limit per request</div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost" id="tr_sampleBtn">
+            <i class="fas fa-shuffle"></i> Try sample
+          </button>
+          <button class="btn btn-primary" id="tr_translateBtn">
+            <i class="fas fa-wand-magic-sparkles"></i> Translate
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="ico"><i class="fas fa-circle-info"></i></span> About Mayura
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--text-2);line-height:1.7;">
+        <p style="margin-bottom:10px;">Sarvam Mayura is a bidirectional translation model supporting English and 10 major Indian languages. It handles style control (formal / colloquial), script switching (Roman / native), numerals formatting, and speaker gender — all in a single API call.</p>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3);">Powered by <span style="color:var(--cyan);">Sarvam AI</span> · CORS via <span style="color:var(--cyan);">cors.sh</span> · Add a free cors.sh key above to lift rate limits.</p>
       </div>
     </section>
   </div>
@@ -1299,11 +1467,174 @@ sttStartBtn.addEventListener('click', startRecording);
 sttStopBtn.addEventListener('click', () => stopRecording(false));
 window.addEventListener('beforeunload', () => { if (sttWebSocket) sttWebSocket.close(); });
 
+/* ===== TRANSLATOR MODULE ===== */
+const TR_LANGS = [
+  {code:"auto",   name:"Auto-detect"},
+  {code:"en-IN",  name:"English"},
+  {code:"hi-IN",  name:"हिन्दी · Hindi"},
+  {code:"bn-IN",  name:"বাংলা · Bengali"},
+  {code:"ta-IN",  name:"தமிழ் · Tamil"},
+  {code:"te-IN",  name:"తెలుగు · Telugu"},
+  {code:"gu-IN",  name:"ગુજરાતી · Gujarati"},
+  {code:"kn-IN",  name:"ಕನ್ನಡ · Kannada"},
+  {code:"ml-IN",  name:"മലയാളം · Malayalam"},
+  {code:"mr-IN",  name:"मराठी · Marathi"},
+  {code:"pa-IN",  name:"ਪੰਜਾਬੀ · Punjabi"},
+  {code:"od-IN",  name:"ଓଡ଼ିଆ · Odia"}
+];
+const TR_MAX = 1000;
+
+const trSrcSel = $("tr_src"), trTgtSel = $("tr_tgt"), trInput = $("tr_input"), trOutput = $("tr_output"),
+  trCounter = $("tr_counter"), trDetected = $("tr_detected"), trOutMeta = $("tr_outMeta"), trOutChars = $("tr_outChars"),
+  trTranslateBtn = $("tr_translateBtn"), trCopyBtn = $("tr_copyBtn"), trClearBtn = $("tr_clearBtn"),
+  trSwapBtn = $("tr_swap"), trSampleBtn = $("tr_sampleBtn"), trCorsKey = $("tr_corsKey"),
+  trModeSel = $("tr_mode"), trScriptSel = $("tr_script"), trNumeralsSel = $("tr_numerals"), trGenderSel = $("tr_gender");
+
+let trIsTranslating = false;
+
+function trFillLangs() {
+  TR_LANGS.forEach(l => {
+    trSrcSel.add(new Option(l.name, l.code));
+    if (l.code !== "auto") trTgtSel.add(new Option(l.name, l.code));
+  });
+  trSrcSel.value = "auto";
+  trTgtSel.value = "hi-IN";
+}
+function trLangName(code) {
+  const l = TR_LANGS.find(x => x.code === code);
+  return l ? l.name.split(" · ").pop() : code;
+}
+function trUpdateCounter() {
+  const n = trInput.value.length;
+  trCounter.textContent = `${n} / ${TR_MAX}`;
+  trCounter.classList.toggle("warn", n > TR_MAX * 0.85 && n <= TR_MAX);
+  trCounter.classList.toggle("over", n > TR_MAX);
+}
+
+trInput.addEventListener("input", trUpdateCounter);
+
+trClearBtn.addEventListener("click", () => {
+  trInput.value = "";
+  trOutput.textContent = "Your translation will appear here";
+  trOutput.classList.add("empty");
+  trDetected.classList.remove("show");
+  trOutMeta.textContent = "—";
+  trOutChars.textContent = "";
+  trUpdateCounter();
+  trInput.focus();
+});
+
+trSampleBtn.addEventListener("click", () => {
+  const samples = [
+    "Hello, how are you? I hope you're having a wonderful day.",
+    "The festival of lights brings joy to every home.",
+    "Can you please share your bank account details for the refund?",
+    "My train arrives at 7:30 in the evening."
+  ];
+  trInput.value = samples[Math.floor(Math.random() * samples.length)];
+  trUpdateCounter();
+});
+
+trSwapBtn.addEventListener("click", () => {
+  const s = trSrcSel.value, t = trTgtSel.value;
+  if (s === "auto") { showToast("Switch the source language off Auto-detect to swap.", "error"); return; }
+  trSrcSel.value = t;
+  trTgtSel.value = s;
+  const tmp = trInput.value;
+  if (!trOutput.classList.contains("empty")) {
+    trInput.value = trOutput.textContent;
+    trOutput.textContent = tmp;
+  }
+  trUpdateCounter();
+});
+
+trCopyBtn.addEventListener("click", async () => {
+  if (trOutput.classList.contains("empty")) { showToast("Nothing to copy yet.", "error"); return; }
+  try { await navigator.clipboard.writeText(trOutput.textContent); showToast("Copied to clipboard", "success"); }
+  catch { showToast("Clipboard blocked by browser.", "error"); }
+});
+
+async function trTranslate() {
+  const text = trInput.value.trim();
+  if (!text) { showToast("Please enter some text first.", "error"); trInput.focus(); return; }
+  if (text.length > TR_MAX) { showToast(`Input is ${text.length} chars — max is ${TR_MAX}.`, "error"); return; }
+  if (trSrcSel.value === trTgtSel.value) { showToast("Source and target languages are the same.", "error"); return; }
+  if (trIsTranslating) return;
+
+  const body = {
+    input: text,
+    source_language_code: trSrcSel.value,
+    target_language_code: trTgtSel.value,
+    model: "mayura:v1",
+    mode: trModeSel.value,
+    numerals_format: trNumeralsSel.value
+  };
+  if (trScriptSel.value) body.output_script = trScriptSel.value;
+  if (trGenderSel.value) body.speaker_gender = trGenderSel.value;
+
+  const url = "https://proxy.cors.sh/https://www.sarvam.ai/api/playground/translation";
+  const headers = { "accept": "*/*", "Content-Type": "application/json" };
+  if (trCorsKey.value.trim()) headers["x-cors-api-key"] = trCorsKey.value.trim();
+
+  trIsTranslating = true;
+  trTranslateBtn.disabled = true;
+  trTranslateBtn.classList.add("loading");
+  trOutput.classList.remove("empty");
+  trOutput.textContent = "";
+  trOutput.style.opacity = ".5";
+
+  try {
+    const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body), mode: "cors" });
+    let data;
+    const ct = res.headers.get("content-type") || "";
+    if (ct.includes("application/json")) data = await res.json();
+    else { const txt = await res.text(); try { data = JSON.parse(txt); } catch { data = { raw: txt }; } }
+
+    if (!res.ok) {
+      const msg = data?.detail || data?.message || data?.error || data?.raw || `HTTP ${res.status}`;
+      throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+    }
+
+    const translated = data.translated_text || data.translatedText || "";
+    trOutput.textContent = translated;
+    trOutput.style.opacity = "1";
+    trOutChars.textContent = `${translated.length} chars`;
+
+    const srcReturned = data.source_language_code;
+    if (srcReturned) {
+      trDetected.textContent = "Detected: " + trLangName(srcReturned);
+      trDetected.classList.add("show");
+    }
+    trOutMeta.textContent = `${trLangName(trSrcSel.value === "auto" ? (srcReturned || "auto") : trSrcSel.value)} → ${trLangName(trTgtSel.value)}`;
+    if (translated) showToast("Translation complete", "success");
+    else showToast("Empty translation returned.", "error");
+  } catch (err) {
+    trOutput.classList.add("empty");
+    trOutput.textContent = "Translation failed";
+    trOutput.style.opacity = "1";
+    trOutMeta.textContent = "—"; trOutChars.textContent = "";
+    let m = err.message || "Unknown error";
+    if (m.includes("Failed to fetch")) m = "Network/CORS error — proxy.cors.sh may be rate-limited. Try adding a free cors.sh key.";
+    showToast(m, "error");
+  } finally {
+    trIsTranslating = false;
+    trTranslateBtn.disabled = false;
+    trTranslateBtn.classList.remove("loading");
+  }
+}
+
+trTranslateBtn.addEventListener("click", trTranslate);
+trInput.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); trTranslate(); }
+});
+
 /* ===== GLOBAL ===== */
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (!ttsState.isPlaying) drawStaticWaveform(); }, 150); });
 document.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { if ($('tts-panel').classList.contains('active')) { e.preventDefault(); generateBtn.click(); } }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    if ($('tts-panel').classList.contains('active')) { e.preventDefault(); generateBtn.click(); }
+  }
   if (e.code === 'Space' && e.target === document.body && ttsState.currentAudio && $('tts-panel').classList.contains('active')) { e.preventDefault(); togglePlayPause(); }
 });
 
@@ -1316,6 +1647,8 @@ function init() {
   textInput.value = lang.phrases[0]; updateCharCount();
   requestAnimationFrame(drawStaticWaveform);
   buildSttLanguageUI(); initSttVisualizer(); renderSttTranscript();
+  /* Translator init */
+  trFillLangs(); trUpdateCounter();
 }
 init();
 </script>
