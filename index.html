@@ -1,1418 +1,1323 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STT Playground · Real-time Speech to Text</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #05060f;
-            --surface: rgba(255, 255, 255, 0.025);
-            --surface-2: rgba(255, 255, 255, 0.045);
-            --surface-hover: rgba(255, 255, 255, 0.06);
-            --border: rgba(255, 255, 255, 0.07);
-            --border-strong: rgba(255, 255, 255, 0.14);
-            --text: #f5f5fa;
-            --text-2: #b4b4c8;
-            --text-3: #7a7a90;
-            --text-4: #4a4a5c;
-            --cyan: #00d9ff;
-            --violet: #8b5cf6;
-            --mint: #00ff9d;
-            --amber: #ffb547;
-            --rose: #ff5577;
-            --grad: linear-gradient(135deg, #00d9ff 0%, #8b5cf6 100%);
-            --grad-soft: linear-gradient(135deg, rgba(0, 217, 255, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aria — Voice Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+/* ============ DESIGN TOKENS ============ */
+:root{
+  --bg:#05060f; --bg-elev:#0a0c1a;
+  --surface:rgba(255,255,255,.025); --surface-2:rgba(255,255,255,.045); --surface-hover:rgba(255,255,255,.07);
+  --card-solid:#0d0f1e;
+  --border:rgba(255,255,255,.07); --border-strong:rgba(255,255,255,.14); --border-focus:rgba(0,217,255,.45);
+  --text:#f5f5fa; --text-2:#b4b4c8; --text-3:#7a7a90; --text-4:#4a4a5c;
+  --cyan:#00d9ff; --violet:#8b5cf6; --mint:#00ff9d; --amber:#ffb547; --rose:#ff5577;
+  --grad:linear-gradient(135deg,#00d9ff 0%,#8b5cf6 100%);
+  --grad-soft:linear-gradient(135deg,rgba(0,217,255,.15) 0%,rgba(139,92,246,.15) 100%);
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px; --r-pill:999px;
+  --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:20px;--s-6:24px;--s-8:32px;--s-10:40px;
+  --shadow-md:0 8px 24px rgba(0,0,0,.32); --shadow-lg:0 20px 50px rgba(0,0,0,.45);
+  --shadow-glow:0 8px 28px rgba(0,217,255,.22);
+  --ease:cubic-bezier(.22,1,.36,1); --ease-out:cubic-bezier(.16,1,.3,1);
+  --dur-fast:160ms; --dur:240ms;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+::selection{background:rgba(0,217,255,.25);color:var(--text)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:var(--r-pill)}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.2)}
+body{
+  font-family:'Manrope','Noto Sans',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;
+  padding:24px 20px 60px;position:relative;overflow-x:hidden;
+  line-height:1.55;font-weight:400;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:var(--r-sm)}
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; }
+/* ============ BACKGROUND ============ */
+.bg-mesh,.bg-grid,.bg-grain{position:fixed;inset:0;pointer-events:none;z-index:0}
+.bg-mesh{
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 0%,rgba(139,92,246,.18),transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 30%,rgba(0,217,255,.12),transparent 55%),
+    radial-gradient(ellipse 50% 40% at 50% 100%,rgba(0,255,157,.05),transparent 60%);
+}
+@media(prefers-reduced-motion:no-preference){
+  .bg-mesh{animation:drift 30s ease-in-out infinite alternate}
+  @keyframes drift{0%{transform:scale(1) translate(0,0)}100%{transform:scale(1.03) translate(10px,-6px)}}
+}
+.bg-grid{
+  background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:60px 60px;
+  -webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 30%,black,transparent 80%);
+  mask-image:radial-gradient(ellipse 80% 70% at 50% 30%,black,transparent 80%);
+}
+.bg-grain{
+  opacity:.035;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+}
 
-        body {
-            font-family: 'Manrope', system-ui, -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            padding: 28px 20px 60px;
-            position: relative;
-            overflow-x: hidden;
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-        }
+/* ============ LAYOUT ============ */
+.container{max-width:1280px;margin:0 auto;position:relative;z-index:2;display:flex;flex-direction:column;gap:22px}
 
-        /* Ambient layers */
-        .bg-mesh, .bg-grid, .bg-grain {
-            position: fixed; inset: 0; pointer-events: none; z-index: 0;
-        }
-        .bg-mesh {
-            background:
-                radial-gradient(ellipse 70% 50% at 15% 0%, rgba(139, 92, 246, 0.20), transparent 60%),
-                radial-gradient(ellipse 60% 40% at 85% 30%, rgba(0, 217, 255, 0.14), transparent 55%),
-                radial-gradient(ellipse 50% 40% at 50% 100%, rgba(0, 255, 157, 0.06), transparent 60%);
-        }
-        .bg-grid {
-            background-image:
-                linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-            background-size: 60px 60px;
-            -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, black, transparent 80%);
-                    mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, black, transparent 80%);
-        }
-        .bg-grain {
-            opacity: 0.04;
-            mix-blend-mode: overlay;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
-        }
+/* ============ TOPBAR ============ */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);
+  padding:var(--s-3) var(--s-5);background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r-lg);
+  backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);
+}
+.brand{display:flex;align-items:center;gap:var(--s-3)}
+.brand-mark{
+  width:40px;height:40px;border-radius:var(--r-md);background:var(--grad);
+  display:grid;place-items:center;box-shadow:var(--shadow-glow);
+  position:relative;overflow:hidden;
+}
+.brand-mark::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.3),transparent 55%)}
+.brand-mark i{color:#fff;font-size:17px;position:relative;z-index:1}
+.brand-text{display:flex;flex-direction:column;line-height:1}
+.brand-name{font-family:'Sora',sans-serif;font-weight:800;font-size:19px;letter-spacing:-.02em;color:var(--text)}
+.brand-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3);letter-spacing:.18em;text-transform:uppercase;margin-top:4px;font-weight:500}
 
-        .container {
-            max-width: 1180px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 2;
-            display: flex;
-            flex-direction: column;
-            gap: 22px;
-        }
+.status-pill{
+  display:inline-flex;align-items:center;gap:10px;padding:7px 14px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r-pill);
+  font-size:13px;font-weight:500;color:var(--text-2);
+}
+.status-pill.busy{background:rgba(0,217,255,.08);border-color:rgba(0,217,255,.25);color:var(--cyan)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+@media(prefers-reduced-motion:no-preference){
+  .status-dot{animation:pulse 2.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.85)}}
+}
 
-        /* HERO */
-        .hero {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            flex-wrap: wrap;
-            gap: 24px;
-            padding: 10px 4px 18px;
-            border-bottom: 1px solid var(--border);
-        }
-        .hero-left { flex: 1; min-width: 280px; }
-        .hero-eyebrow {
-            display: inline-flex; align-items: center; gap: 8px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; font-weight: 500;
-            letter-spacing: 0.18em; text-transform: uppercase;
-            color: var(--cyan);
-            padding: 6px 12px;
-            background: rgba(0, 217, 255, 0.08);
-            border: 1px solid rgba(0, 217, 255, 0.22);
-            border-radius: 100px;
-            margin-bottom: 18px;
-        }
-        .hero-eyebrow .dot {
-            width: 6px; height: 6px; background: var(--cyan); border-radius: 50%;
-            box-shadow: 0 0 8px var(--cyan);
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+/* ============ HERO ============ */
+.hero{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:24px;padding:8px 4px 18px;border-bottom:1px solid var(--border)}
+.hero-left{flex:1;min-width:280px}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;
+  font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);
+  padding:6px 12px;background:rgba(0,217,255,.08);border:1px solid rgba(0,217,255,.22);
+  border-radius:var(--r-pill);margin-bottom:18px;
+}
+.hero-eyebrow .dot{width:6px;height:6px;background:var(--cyan);border-radius:50%;box-shadow:0 0 8px var(--cyan)}
+@media(prefers-reduced-motion:no-preference){.hero-eyebrow .dot{animation:pulse 2s infinite}}
+.hero h1{font-family:'Sora',sans-serif;font-size:clamp(36px,5vw,56px);font-weight:800;line-height:1.02;letter-spacing:-.035em;margin-bottom:14px}
+.hero h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--text-2);font-size:15px;max-width:560px;font-weight:300}
+.hero-meta{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-3)}
+.hero-meta .model{color:var(--mint);font-weight:600}
+.hero-meta .row{display:flex;gap:8px;align-items:center}
+.hero-meta .k{color:var(--text-4)}
 
-        .hero h1 {
-            font-family: 'Sora', sans-serif;
-            font-size: clamp(38px, 5.4vw, 60px);
-            font-weight: 800;
-            line-height: 1;
-            letter-spacing: -0.035em;
-            margin-bottom: 14px;
-        }
-        .hero h1 .grad {
-            background: var(--grad);
-            -webkit-background-clip: text; background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .hero p {
-            color: var(--text-2);
-            font-size: 15px;
-            max-width: 540px;
-        }
-        .hero-meta {
-            display: flex; flex-direction: column;
-            align-items: flex-end; gap: 6px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px; color: var(--text-3);
-        }
-        .hero-meta .model { color: var(--mint); font-weight: 600; }
-        .hero-meta .row { display: flex; gap: 8px; align-items: center; }
-        .hero-meta .k { color: var(--text-4); }
+/* ============ TABS ============ */
+.tabs{display:inline-flex;gap:4px;padding:5px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--r-md);align-self:flex-start}
+.tab-btn{
+  padding:10px 22px;background:transparent;color:var(--text-2);
+  font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;
+  border:none;border-radius:var(--r-sm);cursor:pointer;
+  transition:all var(--dur-fast) var(--ease);
+  display:inline-flex;align-items:center;gap:8px;
+}
+.tab-btn:hover:not(.active){background:rgba(255,255,255,.04);color:var(--text)}
+.tab-btn.active{background:var(--grad);color:#fff;box-shadow:0 2px 12px rgba(0,217,255,.25)}
+.tab-btn i{font-size:12px}
 
-        /* CARDS */
-        .card {
-            background: var(--surface);
-            backdrop-filter: blur(24px) saturate(140%);
-            -webkit-backdrop-filter: blur(24px) saturate(140%);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 22px;
-            position: relative;
-            overflow: hidden;
-        }
-        .card::before {
-            content: '';
-            position: absolute; inset: 0;
-            border-radius: 18px;
-            padding: 1px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent 40%, transparent 60%, rgba(139, 92, 246, 0.08));
-            -webkit-mask: linear-gradient(black, black) content-box, linear-gradient(black, black);
-            -webkit-mask-composite: xor; mask-composite: exclude;
-            pointer-events: none;
-        }
-        .card-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 18px;
-        }
-        .card-title {
-            display: flex; align-items: center; gap: 10px;
-            font-family: 'Sora', sans-serif;
-            font-size: 14px; font-weight: 600;
-            letter-spacing: -0.01em;
-        }
-        .card-title .ico {
-            width: 28px; height: 28px; border-radius: 8px;
-            background: var(--grad-soft);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 14px; border: 1px solid var(--border);
-            color: var(--cyan);
-        }
-        .card-sub {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; color: var(--text-3);
-        }
+/* ============ PANELS ============ */
+.panel{display:none;flex-direction:column;gap:22px}
+.panel.active{display:flex}
 
-        /* CONTROL PANEL */
-        .control-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
-        }
-        @media (max-width: 720px) { .control-grid { grid-template-columns: 1fr; } }
+/* ============ CARDS ============ */
+.card{
+  background:var(--surface);backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);
+  border:1px solid var(--border);border-radius:var(--r-lg);padding:22px;position:relative;overflow:hidden;
+}
+.card::before{
+  content:'';position:absolute;inset:0;border-radius:var(--r-lg);padding:1px;
+  background:linear-gradient(135deg,rgba(255,255,255,.1),transparent 40%,transparent 60%,rgba(139,92,246,.06));
+  -webkit-mask:linear-gradient(black,black) content-box,linear-gradient(black,black);
+  -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;
+}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.card-title{display:flex;align-items:center;gap:10px;font-family:'Sora',sans-serif;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.card-title .ico{
+  width:28px;height:28px;border-radius:var(--r-sm);background:var(--grad-soft);
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+  border:1px solid var(--border);color:var(--cyan);
+}
+.card-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3)}
 
-        .control-row { display: flex; flex-direction: column; gap: 10px; }
-        .control-label {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px; font-weight: 500;
-            letter-spacing: 0.18em; text-transform: uppercase;
-            color: var(--text-3);
-        }
-        .btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.section-label{
+  display:flex;align-items:center;gap:var(--s-3);
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--text-3);font-weight:500;margin-bottom:var(--s-4);
+}
+.section-label i{color:var(--cyan);font-size:11px}
+.section-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
 
-        button { font-family: inherit; cursor: pointer; border: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+/* ============ BUTTONS ============ */
+button{font-family:inherit;cursor:pointer;border:none;transition:all var(--dur-fast) var(--ease)}
+.btn{
+  padding:12px 22px;border-radius:var(--r-md);font-size:14px;font-weight:600;letter-spacing:-.01em;
+  display:inline-flex;align-items:center;gap:8px;position:relative;overflow:hidden;
+}
+.btn-primary{background:var(--grad);color:#fff;box-shadow:0 4px 20px rgba(0,217,255,.28),inset 0 1px 0 rgba(255,255,255,.2)}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 28px rgba(0,217,255,.45),inset 0 1px 0 rgba(255,255,255,.2)}
+.btn-primary:disabled{background:rgba(255,255,255,.05);color:var(--text-4);cursor:not-allowed;box-shadow:none}
+.btn-danger{background:rgba(255,85,119,.12);color:var(--rose);border:1px solid rgba(255,85,119,.3)}
+.btn-danger:hover:not(:disabled){background:rgba(255,85,119,.2);border-color:rgba(255,85,119,.55);transform:translateY(-1px)}
+.btn-danger:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary.loading{color:transparent}
+.btn-primary.loading::after{
+  content:'';position:absolute;width:20px;height:20px;
+  border:2.5px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;
+  left:50%;top:50%;transform:translate(-50%,-50%);
+}
+@media(prefers-reduced-motion:no-preference){
+  .btn-primary.loading::after{animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+}
+.icon-btn{
+  width:34px;height:34px;border-radius:var(--r-sm);background:rgba(255,255,255,.04);
+  border:1px solid var(--border);color:var(--text-2);cursor:pointer;
+  display:grid;place-items:center;font-size:13px;transition:all var(--dur-fast) var(--ease);
+}
+.icon-btn:hover:not(:disabled){background:rgba(0,217,255,.1);border-color:rgba(0,217,255,.3);color:var(--cyan)}
+.icon-btn:disabled{opacity:.4;cursor:not-allowed}
 
-        .btn {
-            padding: 12px 22px;
-            border-radius: 12px;
-            font-size: 14px; font-weight: 600;
-            letter-spacing: -0.01em;
-            display: inline-flex; align-items: center; gap: 8px;
-            position: relative; overflow: hidden;
-        }
-        .btn-primary {
-            background: var(--grad);
-            color: white;
-            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.28), inset 0 1px 0 rgba(255,255,255,0.2);
-        }
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 28px rgba(0, 217, 255, 0.45), inset 0 1px 0 rgba(255,255,255,0.2);
-        }
-        .btn-primary:disabled {
-            background: rgba(255,255,255,0.05); color: var(--text-4);
-            cursor: not-allowed; box-shadow: none;
-        }
-        .btn-danger {
-            background: rgba(255, 85, 119, 0.12);
-            color: var(--rose);
-            border: 1px solid rgba(255, 85, 119, 0.3);
-        }
-        .btn-danger:hover:not(:disabled) {
-            background: rgba(255, 85, 119, 0.2);
-            border-color: rgba(255, 85, 119, 0.55);
-            transform: translateY(-1px);
-        }
-        .btn-danger:disabled { opacity: 0.4; cursor: not-allowed; }
+/* ============ TTS — LANG GRID ============ */
+.tts-lang-grid{display:flex;flex-wrap:wrap;gap:var(--s-2);margin-bottom:var(--s-6)}
+.tts-lang-pill{
+  display:inline-flex;align-items:center;gap:var(--s-3);
+  padding:var(--s-2) var(--s-3) var(--s-2) var(--s-4);
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+  cursor:pointer;transition:all var(--dur-fast) var(--ease);backdrop-filter:blur(10px);
+  font:inherit;color:var(--text-2);text-align:left;
+}
+.tts-lang-pill:hover{border-color:var(--border-strong);transform:translateY(-1px);background:rgba(0,217,255,.04)}
+.tts-lang-pill.active{border-color:rgba(0,217,255,.4);background:var(--grad-soft);color:var(--text);box-shadow:0 4px 16px rgba(0,217,255,.12)}
+.tts-lang-script{font-family:'Noto Sans','Manrope',sans-serif;font-size:16px;font-weight:600;color:var(--cyan)}
+.tts-lang-name{font-size:13px;font-weight:500}
+.tts-lang-code{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-4);padding:2px 6px;background:rgba(255,255,255,.04);border-radius:var(--r-sm)}
 
-        /* STATUS PILL */
-        .status-pill {
-            display: inline-flex; align-items: center; gap: 10px;
-            padding: 8px 14px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--border);
-            border-radius: 100px;
-            font-size: 13px; font-weight: 500;
-            color: var(--text-2);
-        }
-        .vad-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: var(--text-4);
-            transition: all 0.2s;
-        }
-        .vad-dot.active {
-            background: var(--mint);
-            box-shadow: 0 0 0 4px rgba(0, 255, 157, 0.15), 0 0 12px var(--mint);
-            animation: vadPulse 1s infinite;
-        }
-        @keyframes vadPulse {
-            0%, 100% { box-shadow: 0 0 0 4px rgba(0, 255, 157, 0.15), 0 0 12px var(--mint); }
-            50% { box-shadow: 0 0 0 9px rgba(0, 255, 157, 0.04), 0 0 22px var(--mint); }
-        }
+/* ============ TTS — STUDIO GRID ============ */
+.tts-studio{display:grid;grid-template-columns:1.35fr 1fr;gap:var(--s-5)}
+@media(max-width:980px){.tts-studio{grid-template-columns:1fr}}
 
-        /* MODE SELECTOR */
-        .mode-selector {
-            display: inline-flex; gap: 4px; padding: 4px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-        }
-        .mode-btn {
-            padding: 9px 18px;
-            background: transparent;
-            color: var(--text-2);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px; font-weight: 500;
-            border-radius: 8px;
-            letter-spacing: 0.02em;
-        }
-        .mode-btn:hover:not(:disabled):not(.active) {
-            background: rgba(255,255,255,0.04); color: var(--text);
-        }
-        .mode-btn.active {
-            background: var(--grad); color: white;
-            box-shadow: 0 2px 10px rgba(0, 217, 255, 0.25);
-        }
-        .mode-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* ============ TTS — TEXTAREA ============ */
+.textarea-wrap{margin-bottom:var(--s-3)}
+.textarea{
+  width:100%;min-height:160px;padding:var(--s-4);
+  background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--r-md);
+  color:var(--text);font-family:'Noto Sans','Manrope',sans-serif;font-size:16px;line-height:1.6;
+  resize:vertical;outline:none;transition:all var(--dur-fast) var(--ease);
+}
+.textarea:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(0,217,255,.12);background:rgba(0,0,0,.45)}
+.textarea::placeholder{color:var(--text-4);font-style:italic}
+.textarea-footer{display:flex;align-items:center;justify-content:space-between;margin-top:var(--s-2);font-size:12px}
+.char-count{display:inline-flex;align-items:center;gap:var(--s-2);color:var(--text-3);font-family:'JetBrains Mono',monospace}
+.char-count .count{color:var(--text-2);font-weight:500}
+.char-count.warn .count{color:var(--amber)}
+.char-count.danger .count{color:var(--rose)}
+.textarea-actions{display:flex;gap:var(--s-2);align-items:center}
+.live-badge{
+  display:none;align-items:center;gap:6px;padding:3px 9px;
+  background:rgba(0,217,255,.12);border:1px solid rgba(0,217,255,.3);border-radius:var(--r-pill);
+  font-size:10px;font-weight:600;color:var(--cyan);letter-spacing:1.5px;font-family:'JetBrains Mono',monospace;
+}
+.live-badge.on{display:inline-flex}
+.live-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--cyan)}
+@media(prefers-reduced-motion:no-preference){.live-badge::before{animation:pulse 1s ease-in-out infinite}}
 
-        /* SELECT */
-        .select-wrap { position: relative; }
-        #langSelect {
-            width: 100%;
-            padding: 11px 36px 11px 14px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 13px;
-            background: rgba(0,0,0,0.3);
-            color: var(--text);
-            cursor: pointer;
-            appearance: none; -webkit-appearance: none;
-            transition: all 0.2s;
-        }
-        #langSelect:hover:not(:disabled) { border-color: var(--border-strong); }
-        #langSelect:focus {
-            outline: none; border-color: var(--cyan);
-            box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.15);
-        }
-        #langSelect:disabled { opacity: 0.5; cursor: not-allowed; }
-        .select-wrap::after {
-            content: ''; position: absolute;
-            right: 14px; top: 50%;
-            width: 7px; height: 7px;
-            border-right: 2px solid var(--text-3);
-            border-bottom: 2px solid var(--text-3);
-            transform: translateY(-70%) rotate(45deg);
-            pointer-events: none;
-        }
+/* ============ TTS — PHRASES ============ */
+.phrases{display:flex;flex-wrap:wrap;gap:var(--s-2);margin-bottom:var(--s-4)}
+.phrase-chip{
+  padding:6px 12px;background:rgba(0,217,255,.05);border:1px solid rgba(0,217,255,.12);
+  border-radius:var(--r-pill);font-family:'Noto Sans','Manrope',sans-serif;font-size:13px;
+  color:var(--text-2);cursor:pointer;transition:all var(--dur-fast) var(--ease);
+}
+.phrase-chip:hover{background:rgba(0,217,255,.1);border-color:rgba(0,217,255,.3);color:var(--cyan);transform:translateY(-1px)}
 
-        /* VISUALIZER */
-        .visualizer-card { padding: 0; overflow: hidden; }
-        .visualizer-wrap {
-            position: relative;
-            height: 140px;
-            background:
-                radial-gradient(ellipse 60% 80% at 50% 50%, rgba(139, 92, 246, 0.08), transparent 70%),
-                linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.2));
-            overflow: hidden;
-        }
-        #visualizer { width: 100%; height: 100%; display: block; }
-        .vis-placeholder {
-            position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: center;
-            color: var(--text-4);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; letter-spacing: 0.25em;
-            text-transform: uppercase;
-            pointer-events: none;
-            transition: opacity 0.4s;
-        }
-        .vis-placeholder.hidden { opacity: 0; }
+/* ============ TTS — TOGGLE ============ */
+.toggle-row{
+  display:flex;align-items:center;justify-content:space-between;margin-top:var(--s-3);
+  padding:11px var(--s-4);background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:var(--r-md);
+}
+.toggle-row .label{font-size:13px;color:var(--text-2);display:flex;align-items:center;gap:var(--s-2)}
+.toggle-row .label i{color:var(--cyan);font-size:12px}
+.toggle{
+  position:relative;width:38px;height:22px;background:rgba(255,255,255,.1);
+  border-radius:var(--r-pill);cursor:pointer;transition:background var(--dur) var(--ease);flex-shrink:0;border:none;
+}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--text);border-radius:50%;transition:transform var(--dur) var(--ease)}
+.toggle.on{background:var(--grad)}
+.toggle.on::after{transform:translateX(16px);background:#fff}
 
-        /* TRANSCRIPT */
-        .transcript-card { min-height: 220px; display: flex; flex-direction: column; }
-        .transcript-body {
-            flex: 1;
-            font-family: 'Sora', sans-serif;
-            font-size: 22px;
-            line-height: 1.6;
-            color: var(--text);
-            letter-spacing: -0.01em;
-            min-height: 160px;
-            position: relative;
-            padding: 4px 0;
-        }
-        .transcript-empty {
-            color: var(--text-4);
-            font-style: italic;
-            font-weight: 300;
-            font-size: 18px;
-        }
-        .transcript-cursor {
-            display: inline-block;
-            width: 3px; height: 24px;
-            background: var(--cyan);
-            vertical-align: text-bottom;
-            margin-left: 3px;
-            animation: blink 1s infinite;
-            box-shadow: 0 0 10px var(--cyan);
-            border-radius: 1px;
-        }
-        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+/* ============ TTS — SPEAKERS ============ */
+.speaker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:var(--s-2);max-height:220px;overflow-y:auto;padding:4px;margin-bottom:var(--s-4);scrollbar-width:thin}
+.speaker-card{padding:var(--s-2) 6px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:var(--r-md);cursor:pointer;text-align:center;transition:all var(--dur-fast) var(--ease);font:inherit;color:inherit}
+.speaker-card:hover{border-color:var(--border-strong);transform:translateY(-1px)}
+.speaker-card.active{background:var(--grad-soft);border-color:rgba(0,217,255,.35)}
+.speaker-avatar{width:30px;height:30px;margin:0 auto 5px;border-radius:50%;display:grid;place-items:center;font-family:'Sora',sans-serif;font-weight:700;font-size:13px;color:#fff;background:var(--grad)}
+.speaker-card.active .speaker-avatar{box-shadow:0 0 0 3px rgba(0,217,255,.25)}
+.speaker-name{font-size:11px;font-weight:500;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.speaker-card.active .speaker-name{color:var(--text)}
 
-        /* DEBUG LOG */
-        .debug-card { padding: 0; overflow: hidden; }
-        .debug-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 14px 18px;
-            background: rgba(0,0,0,0.4);
-            border-bottom: 1px solid var(--border);
-            cursor: pointer; user-select: none;
-            transition: background 0.15s;
-        }
-        .debug-header:hover { background: rgba(0,0,0,0.55); }
-        .debug-title {
-            display: flex; align-items: center; gap: 12px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px; color: var(--text-2);
-        }
-        .debug-dots { display: flex; gap: 6px; }
-        .debug-dots span { width: 10px; height: 10px; border-radius: 50%; }
-        .debug-toggle {
-            color: var(--text-3);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-        }
-        #debugLog {
-            height: 220px;
-            background: #060713;
-            color: var(--mint);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; line-height: 1.7;
-            padding: 14px 18px;
-            overflow-y: auto;
-            white-space: pre-wrap; word-wrap: break-word;
-            transition: height 0.3s, padding 0.3s;
-        }
-        #debugLog.collapsed { height: 0; padding: 0 18px; }
-        #debugLog::-webkit-scrollbar { width: 8px; }
-        #debugLog::-webkit-scrollbar-track { background: transparent; }
-        #debugLog::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-        #debugLog::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+/* ============ TTS — PARAMS ============ */
+.param-group{margin-bottom:var(--s-4)}
+.param-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:11px}
+.param-label .name{color:var(--text-2);font-weight:600;text-transform:uppercase;letter-spacing:.1em;font-family:'JetBrains Mono',monospace}
+.param-label .value{font-family:'JetBrains Mono',monospace;color:var(--cyan);font-weight:500;font-size:12px}
+.slider{
+  -webkit-appearance:none;appearance:none;width:100%;height:4px;
+  background:linear-gradient(to right,var(--cyan) 0%,var(--violet) var(--p,50%),rgba(255,255,255,.08) var(--p,50%));
+  border-radius:var(--r-pill);outline:none;cursor:pointer;
+}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--grad);cursor:pointer;border:2px solid var(--bg);box-shadow:0 2px 6px rgba(0,217,255,.4)}
+.slider::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--cyan);cursor:pointer;border:2px solid var(--bg)}
+.param-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3)}
+.select-input{
+  width:100%;padding:10px 12px;background:rgba(0,0,0,.3);border:1px solid var(--border);
+  border-radius:var(--r-md);color:var(--text);font-family:'Manrope',sans-serif;font-size:13px;
+  outline:none;cursor:pointer;transition:all var(--dur-fast) var(--ease);appearance:none;-webkit-appearance:none;
+}
+.select-input:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(0,217,255,.12)}
+.select-input option{background:var(--card-solid)}
 
-        /* LANGUAGES */
-        .lang-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 6px;
-            margin-top: 6px;
-        }
-        .lang-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 9px 12px;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            font-size: 13px;
-            transition: all 0.15s;
-        }
-        .lang-item:hover {
-            background: var(--surface-hover);
-            border-color: var(--border-strong);
-            transform: translateX(2px);
-        }
-        .lang-item .name { color: var(--text); font-weight: 500; }
-        .lang-item .code {
-            color: var(--cyan);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; font-weight: 600;
-            padding: 2px 7px;
-            background: rgba(0, 217, 255, 0.08);
-            border-radius: 4px;
-        }
-        .lang-hint {
-            margin-top: 18px;
-            padding: 14px 16px;
-            background: rgba(0, 217, 255, 0.04);
-            border: 1px solid rgba(0, 217, 255, 0.12);
-            border-radius: 12px;
-            font-size: 12px;
-            color: var(--text-2);
-            line-height: 1.7;
-        }
-        .lang-hint code {
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--cyan);
-            background: rgba(0, 217, 255, 0.08);
-            padding: 1px 6px;
-            border-radius: 4px;
-            font-size: 11px;
-        }
-        .collapsible-body {
-            max-height: 0; overflow: hidden;
-            transition: max-height 0.4s ease;
-        }
-        .collapsible-body.open { max-height: 3000px; }
+/* ============ TTS — PLAYER ============ */
+.player-panel{
+  background:linear-gradient(135deg,rgba(0,217,255,.04),rgba(139,92,246,.04));
+  border:1px solid rgba(0,217,255,.15);border-radius:var(--r-lg);padding:var(--s-6);
+  position:relative;overflow:hidden;
+}
+.player-panel::before{content:'';position:absolute;top:-40%;right:-8%;width:360px;height:360px;background:radial-gradient(circle,rgba(0,217,255,.08),transparent 60%);pointer-events:none}
+.player-grid{display:grid;grid-template-columns:auto 1fr auto;gap:var(--s-5);align-items:center;position:relative;z-index:1}
+@media(max-width:720px){.player-grid{grid-template-columns:1fr;text-align:center}}
+.play-btn{
+  width:56px;height:56px;border-radius:50%;background:var(--grad);border:none;color:#fff;
+  font-size:18px;cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow-glow);
+  transition:transform var(--dur-fast) var(--ease);flex-shrink:0;
+}
+.play-btn:hover:not(:disabled){transform:scale(1.05)}
+.play-btn:disabled{opacity:.35;cursor:not-allowed;background:rgba(255,255,255,.08);box-shadow:none}
+.player-info{min-width:0}
+.player-title{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-meta{font-size:11px;color:var(--text-3);display:flex;gap:var(--s-3);flex-wrap:wrap;font-family:'JetBrains Mono',monospace}
+.player-meta span{display:inline-flex;align-items:center;gap:4px}
+.player-meta i{font-size:9px;color:var(--cyan)}
+.waveform{width:100%;height:50px;border-radius:var(--r-sm);background:rgba(0,0,0,.25);margin-top:10px;display:block}
+.player-actions{display:flex;gap:var(--s-2)}
+.player-actions .icon-btn{width:38px;height:38px;font-size:13px}
 
-        /* LIMITS SECTION */
-        .limits-section { display: flex; flex-direction: column; gap: 22px; }
-        .section-header {
-            display: flex; align-items: baseline; justify-content: space-between;
-            padding: 12px 4px 0;
-            flex-wrap: wrap; gap: 8px;
-        }
-        .section-header h2 {
-            font-family: 'Sora', sans-serif;
-            font-size: clamp(26px, 3.4vw, 34px);
-            font-weight: 700;
-            letter-spacing: -0.025em;
-        }
-        .section-header h2 .grad {
-            background: var(--grad);
-            -webkit-background-clip: text; background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .section-header .sub {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; color: var(--text-3);
-            letter-spacing: 0.15em; text-transform: uppercase;
-        }
+/* ============ TTS — HISTORY ============ */
+.history-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:var(--s-3)}
+.history-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-4);
+  backdrop-filter:blur(10px);transition:all var(--dur) var(--ease);cursor:pointer;
+  position:relative;overflow:hidden;font:inherit;color:inherit;text-align:left;
+}
+.history-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--grad);transform:scaleY(0);transform-origin:top;transition:transform var(--dur) var(--ease)}
+.history-card:hover{border-color:rgba(0,217,255,.2);transform:translateY(-2px);background:rgba(0,217,255,.03)}
+.history-card:hover::before{transform:scaleY(1)}
+.history-text{font-family:'Noto Sans',sans-serif;font-size:14px;line-height:1.4;margin-bottom:var(--s-3);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--text-2);min-height:40px}
+.history-meta{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--text-4)}
+.history-meta .left{display:flex;gap:6px;align-items:center}
+.history-tag{padding:2px 8px;background:rgba(0,217,255,.08);border:1px solid rgba(0,217,255,.18);border-radius:var(--r-pill);color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600}
+.history-speaker,.history-time{font-family:'JetBrains Mono',monospace}
+.empty-state{grid-column:1/-1;text-align:center;padding:var(--s-10) var(--s-5);color:var(--text-4)}
+.empty-state i{font-size:32px;margin-bottom:var(--s-3);color:rgba(255,255,255,.1);display:block}
+.empty-state div{font-size:13px}
 
-        .limits-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 18px;
-        }
-        @media (max-width: 880px) { .limits-grid { grid-template-columns: 1fr; } }
+/* ============ STT — CONTROL ============ */
+.control-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media(max-width:720px){.control-grid{grid-template-columns:1fr}}
+.control-row{display:flex;flex-direction:column;gap:10px}
+.control-label{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--text-3)}
+.btn-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.mode-selector{display:inline-flex;gap:4px;padding:4px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--r-md)}
+.mode-btn{padding:9px 18px;background:transparent;color:var(--text-2);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;border-radius:var(--r-sm);letter-spacing:.02em;border:none;cursor:pointer;transition:all .2s}
+.mode-btn:hover:not(:disabled):not(.active){background:rgba(255,255,255,.04);color:var(--text)}
+.mode-btn.active{background:var(--grad);color:#fff;box-shadow:0 2px 10px rgba(0,217,255,.25)}
+.mode-btn:disabled{opacity:.4;cursor:not-allowed}
+.select-wrap{position:relative}
+.stt-select{
+  width:100%;padding:11px 36px 11px 14px;border:1px solid var(--border);border-radius:var(--r-md);
+  font-family:inherit;font-size:13px;background:rgba(0,0,0,.3);color:var(--text);cursor:pointer;
+  appearance:none;-webkit-appearance:none;transition:all .2s;
+}
+.stt-select:hover:not(:disabled){border-color:var(--border-strong)}
+.stt-select:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,217,255,.15)}
+.stt-select:disabled{opacity:.5;cursor:not-allowed}
+.select-wrap::after{content:'';position:absolute;right:14px;top:50%;width:7px;height:7px;border-right:2px solid var(--text-3);border-bottom:2px solid var(--text-3);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.vad-dot{width:8px;height:8px;border-radius:50%;background:var(--text-4);transition:all .2s}
+.vad-dot.active{background:var(--mint);box-shadow:0 0 0 4px rgba(0,255,157,.15),0 0 12px var(--mint)}
+@media(prefers-reduced-motion:no-preference){
+  .vad-dot.active{animation:vadPulse 1s infinite}
+  @keyframes vadPulse{0%,100%{box-shadow:0 0 0 4px rgba(0,255,157,.15),0 0 12px var(--mint)}50%{box-shadow:0 0 0 9px rgba(0,255,157,.04),0 0 22px var(--mint)}}
+}
 
-        .limit-card {
-            background: var(--surface);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 24px;
-            position: relative;
-            overflow: hidden;
-        }
-        .limit-card::before {
-            content: ''; position: absolute;
-            top: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.4), rgba(139, 92, 246, 0.4), transparent);
-        }
-        .limit-card.general { grid-column: 1 / -1; }
+/* ============ STT — VISUALIZER ============ */
+.visualizer-card{padding:0;overflow:hidden}
+.visualizer-wrap{position:relative;height:140px;background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(139,92,246,.08),transparent 70%),linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.2));overflow:hidden}
+#sttVisualizer{width:100%;height:100%;display:block}
+.vis-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-4);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.25em;text-transform:uppercase;pointer-events:none;transition:opacity .4s}
+.vis-placeholder.hidden{opacity:0}
 
-        .limit-card-header {
-            display: flex; align-items: center; gap: 12px;
-            margin-bottom: 22px;
-        }
-        .limit-icon {
-            width: 38px; height: 38px;
-            border-radius: 10px;
-            background: var(--grad-soft);
-            border: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 17px;
-            color: var(--cyan);
-        }
-        .limit-card-title {
-            font-family: 'Sora', sans-serif;
-            font-size: 16px; font-weight: 600;
-        }
-        .limit-card-sub {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; color: var(--text-3);
-            margin-top: 3px;
-            letter-spacing: 0.05em;
-        }
+/* ============ STT — TRANSCRIPT ============ */
+.transcript-card{min-height:220px;display:flex;flex-direction:column}
+.transcript-body{flex:1;font-family:'Sora',sans-serif;font-size:22px;line-height:1.6;color:var(--text);letter-spacing:-.01em;min-height:160px;position:relative;padding:4px 0}
+.transcript-empty{color:var(--text-4);font-style:italic;font-weight:300;font-size:18px}
+.transcript-cursor{display:inline-block;width:3px;height:24px;background:var(--cyan);vertical-align:text-bottom;margin-left:3px;box-shadow:0 0 10px var(--cyan);border-radius:1px}
+@media(prefers-reduced-motion:no-preference){.transcript-cursor{animation:blink 1s infinite}@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}}
 
-        .limit-rows { display: flex; flex-direction: column; gap: 0; }
-        .limit-row {
-            display: grid;
-            grid-template-columns: 220px 1fr;
-            gap: 24px;
-            align-items: center;
-            padding: 18px 0;
-            border-bottom: 1px dashed var(--border);
-        }
-        .limit-row:first-child { padding-top: 0; }
-        .limit-row:last-child { border-bottom: none; padding-bottom: 0; }
-        @media (max-width: 540px) {
-            .limit-row { grid-template-columns: 1fr; gap: 8px; }
-        }
+/* ============ STT — DEBUG ============ */
+.debug-card{padding:0;overflow:hidden}
+.debug-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;transition:background .15s}
+.debug-header:hover{background:rgba(0,0,0,.55)}
+.debug-title{display:flex;align-items:center;gap:12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-2)}
+.debug-dots{display:flex;gap:6px}
+.debug-dots span{width:10px;height:10px;border-radius:50%}
+.debug-toggle{color:var(--text-3);font-family:'JetBrains Mono',monospace;font-size:11px}
+#debugLog{height:220px;background:#060713;color:var(--mint);font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7;padding:14px 18px;overflow-y:auto;white-space:pre-wrap;word-wrap:break-word;transition:height .3s,padding .3s}
+#debugLog.collapsed{height:0;padding:0 18px}
 
-        .limit-key {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text);
-        }
-        .limit-key .hint {
-            display: block;
-            font-size: 11px;
-            color: var(--text-4);
-            margin-top: 3px;
-            font-weight: 400;
-            font-family: 'JetBrains Mono', monospace;
-            letter-spacing: 0.02em;
-        }
-        .limit-value {
-            font-size: 14px;
-            color: var(--text);
-            font-weight: 500;
-        }
-        .limit-value .big {
-            font-family: 'Sora', sans-serif;
-            font-size: 36px;
-            font-weight: 800;
-            background: var(--grad);
-            -webkit-background-clip: text; background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1;
-            letter-spacing: -0.03em;
-        }
-        .limit-value .unit {
-            font-size: 14px;
-            color: var(--text-3);
-            margin-left: 4px;
-            font-weight: 500;
-        }
+/* ============ STT — LANG LIST ============ */
+.stt-lang-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;margin-top:6px}
+.stt-lang-item{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;transition:all .15s}
+.stt-lang-item:hover{background:var(--surface-hover);border-color:var(--border-strong);transform:translateX(2px)}
+.stt-lang-item .name{color:var(--text);font-weight:500}
+.stt-lang-item .code{color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;padding:2px 7px;background:rgba(0,217,255,.08);border-radius:4px}
+.lang-hint{margin-top:18px;padding:14px 16px;background:rgba(0,217,255,.04);border:1px solid rgba(0,217,255,.12);border-radius:var(--r-md);font-size:12px;color:var(--text-2);line-height:1.7}
+.lang-hint code{font-family:'JetBrains Mono',monospace;color:var(--cyan);background:rgba(0,217,255,.08);padding:1px 6px;border-radius:4px;font-size:11px}
+.collapsible-body{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.collapsible-body.open{max-height:3000px}
 
-        .format-chips {
-            display: flex; flex-wrap: wrap; gap: 6px;
-        }
-        .chip {
-            display: inline-flex; align-items: center;
-            padding: 5px 11px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; font-weight: 600;
-            color: var(--text-2);
-            transition: all 0.15s;
-        }
-        .chip:hover {
-            border-color: rgba(0, 217, 255, 0.3);
-            color: var(--cyan);
-            background: rgba(0, 217, 255, 0.05);
-        }
-        .limit-value .note {
-            display: block;
-            font-size: 12px;
-            color: var(--text-3);
-            margin-top: 6px;
-            font-weight: 400;
-        }
-        .limit-value code {
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--cyan);
-            background: rgba(0, 217, 255, 0.08);
-            padding: 2px 7px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-        }
+/* ============ SPECS ============ */
+.limits-section{display:flex;flex-direction:column;gap:22px}
+.section-header{display:flex;align-items:baseline;justify-content:space-between;padding:12px 4px 0;flex-wrap:wrap;gap:8px}
+.section-header h2{font-family:'Sora',sans-serif;font-size:clamp(26px,3.4vw,34px);font-weight:700;letter-spacing:-.025em}
+.section-header h2 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.section-header .sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3);letter-spacing:.15em;text-transform:uppercase}
+.limits-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:880px){.limits-grid{grid-template-columns:1fr}}
+.limit-card{background:var(--surface);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;position:relative;overflow:hidden}
+.limit-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,217,255,.4),rgba(139,92,246,.4),transparent)}
+.limit-card.general{grid-column:1/-1}
+.limit-card-header{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.limit-icon{width:38px;height:38px;border-radius:var(--r-md);background:var(--grad-soft);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--cyan)}
+.limit-card-title{font-family:'Sora',sans-serif;font-size:16px;font-weight:600}
+.limit-card-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-3);margin-top:3px;letter-spacing:.05em}
+.limit-rows{display:flex;flex-direction:column;gap:0}
+.limit-row{display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:center;padding:18px 0;border-bottom:1px dashed var(--border)}
+.limit-row:first-child{padding-top:0}
+.limit-row:last-child{border-bottom:none;padding-bottom:0}
+@media(max-width:540px){.limit-row{grid-template-columns:1fr;gap:8px}}
+.limit-key{font-size:13px;font-weight:600;color:var(--text)}
+.limit-key .hint{display:block;font-size:11px;color:var(--text-4);margin-top:3px;font-weight:400;font-family:'JetBrains Mono',monospace;letter-spacing:.02em}
+.limit-value{font-size:14px;color:var(--text);font-weight:500}
+.limit-value .big{font-family:'Sora',sans-serif;font-size:36px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1;letter-spacing:-.03em}
+.limit-value .unit{font-size:14px;color:var(--text-3);margin-left:4px;font-weight:500}
+.format-chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;padding:5px 11px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--text-2);transition:all .15s}
+.chip:hover{border-color:rgba(0,217,255,.3);color:var(--cyan);background:rgba(0,217,255,.05)}
+.limit-value .note{display:block;font-size:12px;color:var(--text-3);margin-top:6px;font-weight:400}
+.limit-value code{font-family:'JetBrains Mono',monospace;color:var(--cyan);background:rgba(0,217,255,.08);padding:2px 7px;border-radius:4px;font-size:12px;font-weight:600}
+.tier-table{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.tier-col{background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:var(--r-md);padding:20px 14px;text-align:center;position:relative;transition:all .25s var(--ease)}
+.tier-col:hover{border-color:var(--border-strong);transform:translateY(-3px);background:rgba(0,0,0,.35)}
+.tier-col.featured{background:linear-gradient(180deg,rgba(0,217,255,.08),rgba(139,92,246,.08));border-color:rgba(0,217,255,.25)}
+.tier-col.featured::before{content:'';position:absolute;top:-1px;left:20%;right:20%;height:2px;background:var(--grad);border-radius:2px}
+.tier-name{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--text-3);margin-bottom:14px}
+.tier-col.featured .tier-name{color:var(--cyan)}
+.tier-value{font-family:'Sora',sans-serif;font-size:30px;font-weight:800;color:var(--text);line-height:1;margin-bottom:6px;letter-spacing:-.03em}
+.tier-col.featured .tier-value{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.tier-unit{font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace;letter-spacing:.05em}
 
-        /* TIER TABLE */
-        .tier-table {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 12px;
-        }
-        .tier-col {
-            background: rgba(0,0,0,0.25);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 20px 14px;
-            text-align: center;
-            position: relative;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .tier-col:hover {
-            border-color: var(--border-strong);
-            transform: translateY(-3px);
-            background: rgba(0,0,0,0.35);
-        }
-        .tier-col.featured {
-            background: linear-gradient(180deg, rgba(0, 217, 255, 0.08), rgba(139, 92, 246, 0.08));
-            border-color: rgba(0, 217, 255, 0.25);
-        }
-        .tier-col.featured::before {
-            content: ''; position: absolute;
-            top: -1px; left: 20%; right: 20%;
-            height: 2px;
-            background: var(--grad);
-            border-radius: 2px;
-        }
-        .tier-name {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; font-weight: 600;
-            letter-spacing: 0.15em; text-transform: uppercase;
-            color: var(--text-3);
-            margin-bottom: 14px;
-        }
-        .tier-col.featured .tier-name { color: var(--cyan); }
-        .tier-value {
-            font-family: 'Sora', sans-serif;
-            font-size: 30px; font-weight: 800;
-            color: var(--text);
-            line-height: 1;
-            margin-bottom: 6px;
-            letter-spacing: -0.03em;
-        }
-        .tier-col.featured .tier-value {
-            background: var(--grad);
-            -webkit-background-clip: text; background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .tier-unit {
-            font-size: 11px;
-            color: var(--text-3);
-            font-family: 'JetBrains Mono', monospace;
-            letter-spacing: 0.05em;
-        }
+/* ============ FOOTER ============ */
+.footer{text-align:center;color:var(--text-4);font-size:12px;padding:30px 0 10px;font-family:'JetBrains Mono',monospace;letter-spacing:.05em}
+.footer .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:600}
 
-        .footer {
-            text-align: center;
-            color: var(--text-4);
-            font-size: 12px;
-            padding: 30px 0 10px;
-            font-family: 'JetBrains Mono', monospace;
-            letter-spacing: 0.05em;
-        }
-        .footer .grad {
-            background: var(--grad);
-            -webkit-background-clip: text; background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 600;
-        }
-    </style>
+/* ============ TOAST ============ */
+.toast-container{position:fixed;top:20px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:var(--s-2);pointer-events:none}
+.toast{padding:12px var(--s-4);background:var(--card-solid);border:1px solid var(--border-strong);border-radius:var(--r-md);display:flex;align-items:center;gap:var(--s-3);font-size:13px;min-width:260px;max-width:360px;box-shadow:var(--shadow-lg);pointer-events:auto;color:var(--text)}
+@media(prefers-reduced-motion:no-preference){
+  .toast{animation:slideIn .3s var(--ease-out)}
+  @keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+  .toast.fadeOut{animation:slideOut .3s var(--ease) forwards}
+  @keyframes slideOut{to{transform:translateX(120%);opacity:0}}
+}
+.toast.error{border-color:rgba(255,85,119,.4)}
+.toast.error i{color:var(--rose)}
+.toast.success{border-color:rgba(0,255,157,.4)}
+.toast.success i{color:var(--mint)}
+.toast.info i{color:var(--cyan)}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:640px){
+  body{padding:16px 14px 40px}
+  .topbar{flex-direction:column;align-items:stretch;gap:var(--s-3)}
+  .card{padding:var(--s-4)}
+  .hero{flex-direction:column;align-items:flex-start}
+  .hero-meta{align-items:flex-start}
+}
+</style>
 </head>
 <body>
-    <div class="bg-mesh"></div>
-    <div class="bg-grid"></div>
-    <div class="bg-grain"></div>
+<div class="bg-mesh"></div>
+<div class="bg-grid"></div>
+<div class="bg-grain"></div>
 
-    <div class="container">
-        <!-- HERO -->
-        <header class="hero">
-            <div class="hero-left">
-                <div class="hero-eyebrow">
-                    <span class="dot"></span>
-                    Live · WebSocket Streaming
-                </div>
-                <h1>Speech to Text<br><span class="grad">Playground</span></h1>
-                <p>Real-time transcription powered by Sarvam Saaras v3. Stream audio over WebSocket with voice activity detection, multi-language support, and three transcription modes.</p>
-            </div>
-            <div class="hero-meta">
-                <div class="row"><span class="k">MODEL</span> · <span class="model">saaras:v3</span></div>
-                <div class="row"><span class="k">SAMPLE</span> · 16 kHz · mono</div>
-                <div class="row"><span class="k">ENDPOINT</span> · stt-ws</div>
-            </div>
-        </header>
+<div class="container">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><i class="fas fa-wave-square"></i></div>
+      <div class="brand-text">
+        <div class="brand-name">ARIA</div>
+        <div class="brand-sub">Voice Studio</div>
+      </div>
+    </div>
+    <div class="status-pill" id="globalStatus" role="status" aria-live="polite">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span id="globalStatusText">Ready</span>
+    </div>
+  </header>
 
-        <!-- CONTROL PANEL -->
-        <section class="card">
-            <div class="control-grid">
-                <div class="control-row">
-                    <span class="control-label">Session</span>
-                    <div class="btn-row">
-                        <button id="startBtn" class="btn btn-primary">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1H3v1a9 9 0 008 8.94V23h2v-3.06A9 9 0 0021 11v-1h-2z"/></svg>
-                            Start Recording
-                        </button>
-                        <button id="stopBtn" class="btn btn-danger" disabled>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
-                            Stop &amp; Flush
-                        </button>
-                    </div>
-                    <div style="margin-top: 8px;">
-                        <div class="status-pill">
-                            <span class="vad-dot" id="vadIndicator"></span>
-                            <span id="statusText">Idle</span>
-                        </div>
-                    </div>
-                </div>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-eyebrow">
+        <span class="dot"></span>
+        Neural · Real-time · Multilingual
+      </div>
+      <h1>Voice intelligence,<br><span class="grad">in every direction.</span></h1>
+      <p>Convert text to natural speech and transcribe speech to text across multiple languages. One unified studio powered by neural voice models.</p>
+    </div>
+    <div class="hero-meta">
+      <div class="row"><span class="k">TTS</span> · <span class="model">bulbul:v3</span></div>
+      <div class="row"><span class="k">STT</span> · <span class="model">saaras:v3</span></div>
+      <div class="row"><span class="k">LANGS</span> · 11+ supported</div>
+    </div>
+  </section>
 
-                <div class="control-row">
-                    <span class="control-label">Mode</span>
-                    <div class="mode-selector" id="modeSelector">
-                        <button class="mode-btn active" data-mode="transcribe">transcribe</button>
-                        <button class="mode-btn" data-mode="translate">translate</button>
-                        <button class="mode-btn" data-mode="verbatim">verbatim</button>
-                    </div>
-                    <span class="control-label" style="margin-top: 8px;">Language</span>
-                    <div class="select-wrap">
-                        <select id="langSelect">
-                            <option value="unknown">Auto-detect (unknown)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </section>
+  <!-- TABS -->
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="tts" role="tab" aria-selected="true">
+      <i class="fas fa-volume-high"></i> Text to Speech
+    </button>
+    <button class="tab-btn" data-tab="stt" role="tab" aria-selected="false">
+      <i class="fas fa-microphone"></i> Speech to Text
+    </button>
+  </nav>
 
-        <!-- VISUALIZER -->
-        <section class="card visualizer-card">
-            <div class="visualizer-wrap">
-                <canvas id="visualizer"></canvas>
-                <div class="vis-placeholder" id="visPlaceholder">— Audio Idle · Press Start to Begin —</div>
-            </div>
-        </section>
+  <!-- ==================== TTS PANEL ==================== -->
+  <div class="panel active" id="tts-panel" role="tabpanel">
+    <div class="section-label" aria-hidden="true"><i class="fas fa-language"></i> Choose Language</div>
+    <div class="tts-lang-grid" id="ttsLangGrid" role="radiogroup" aria-label="Target language"></div>
 
-        <!-- TRANSCRIPT -->
-        <section class="card transcript-card">
-            <div class="card-header">
-                <div class="card-title">
-                    <span class="ico">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h12M4 18h8"/></svg>
-                    </span>
-                    Live Transcript
-                </div>
-                <span class="card-sub" id="transcriptMeta">0 words · 0 chars</span>
-            </div>
-            <div class="transcript-body" id="transcript">
-                <span class="transcript-empty">Transcript will appear here once you start recording...</span>
-            </div>
-        </section>
+    <div class="tts-studio">
+      <section class="card" aria-label="Text input">
+        <div class="card-header">
+          <div class="card-title"><span class="ico"><i class="fas fa-pen-to-square"></i></span> Your Text</div>
+          <div class="textarea-actions">
+            <span class="live-badge" id="liveBadge">LIVE</span>
+            <button class="icon-btn" id="copyBtn" title="Copy text" aria-label="Copy text"><i class="fas fa-copy"></i></button>
+            <button class="icon-btn" id="clearBtn" title="Clear text" aria-label="Clear text"><i class="fas fa-eraser"></i></button>
+          </div>
+        </div>
+        <div class="textarea-wrap">
+          <textarea class="textarea" id="textInput" placeholder="Type your text here..." aria-label="Text to convert to speech"></textarea>
+          <div class="textarea-footer">
+            <div class="char-count" id="charCount"><i class="fas fa-text-width"></i> <span class="count">0</span> / 2500</div>
+          </div>
+        </div>
+        <div class="section-label" style="margin-top:var(--s-4);" aria-hidden="true"><i class="fas fa-bolt"></i> Quick Phrases</div>
+        <div class="phrases" id="phrases"></div>
+        <button class="btn btn-primary" id="generateBtn" style="width:100%;justify-content:center;padding:14px;">
+          <i class="fas fa-wand-magic-sparkles"></i> <span class="btn-text">Generate Speech</span>
+        </button>
+        <div class="toggle-row">
+          <span class="label"><i class="fas fa-bolt"></i> Auto-generate as I type (live mode)</span>
+          <button class="toggle" id="autoToggle" role="switch" aria-checked="false" aria-label="Toggle live mode"></button>
+        </div>
+      </section>
 
-        <!-- DEBUG LOG -->
-        <section class="card debug-card">
-            <div class="debug-header" id="debugHeader">
-                <div class="debug-title">
-                    <div class="debug-dots">
-                        <span style="background:#ff5f57;"></span>
-                        <span style="background:#febc2e;"></span>
-                        <span style="background:#28c840;"></span>
-                    </div>
-                    debug.log
-                </div>
-                <span class="debug-toggle" id="debugToggle">▼ collapse</span>
-            </div>
-            <div id="debugLog"></div>
-        </section>
-
-        <!-- LANGUAGES -->
-        <section class="card">
-            <div class="card-header" id="langNoticeHeader" style="cursor: pointer; user-select: none; margin-bottom: 0;">
-                <div class="card-title">
-                    <span class="ico">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 010 18M12 3a15 15 0 000 18"/></svg>
-                    </span>
-                    Supported Languages
-                    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--grad);color:white;padding:3px 9px;border-radius:10px;font-weight:600;" id="langCountBadge">23</span>
-                </div>
-                <span class="debug-toggle" id="langNoticeToggle">▶ expand</span>
-            </div>
-            <div class="collapsible-body" id="langNoticeBody">
-                <div style="padding: 18px 0 4px;">
-                    <div class="lang-grid" id="langGrid"></div>
-                    <div class="lang-hint">
-                        Language codes are <strong>optional</strong>. When not specified or set to <code>unknown</code>, the model will automatically detect the input language and return a <code>language_probability</code> score indicating detection confidence.
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- LIMITS SECTION -->
-        <section class="limits-section">
-            <div class="section-header">
-                <h2>API <span class="grad">Limits &amp; Specs</span></h2>
-                <span class="sub">Reference · v3</span>
-            </div>
-
-            <div class="limits-grid">
-                <!-- GENERAL LIMITS -->
-                <div class="limit-card general">
-                    <div class="limit-card-header">
-                        <div class="limit-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-                        </div>
-                        <div>
-                            <div class="limit-card-title">General Limits</div>
-                            <div class="limit-card-sub">Applies to all STT endpoints</div>
-                        </div>
-                    </div>
-                    <div class="limit-rows">
-                        <div class="limit-row">
-                            <div class="limit-key">
-                                Max audio duration
-                                <span class="hint">real-time REST</span>
-                            </div>
-                            <div class="limit-value">
-                                <span class="big">30</span><span class="unit">seconds</span>
-                            </div>
-                        </div>
-                        <div class="limit-row">
-                            <div class="limit-key">
-                                Supported formats
-                                <span class="hint">auto-detected</span>
-                            </div>
-                            <div class="limit-value">
-                                <div class="format-chips">
-                                    <span class="chip">WAV</span>
-                                    <span class="chip">MP3</span>
-                                    <span class="chip">AAC</span>
-                                    <span class="chip">AIFF</span>
-                                    <span class="chip">OGG</span>
-                                    <span class="chip">OPUS</span>
-                                    <span class="chip">FLAC</span>
-                                    <span class="chip">MP4</span>
-                                    <span class="chip">AMR</span>
-                                    <span class="chip">WMA</span>
-                                    <span class="chip">WebM</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="limit-row">
-                            <div class="limit-key">
-                                Raw PCM input
-                                <span class="hint">pcm_s16le · pcm_l16 · pcm_raw</span>
-                            </div>
-                            <div class="limit-value">
-                                Requires <code>input_audio_codec</code>
-                                <span class="note">Must be sampled at <code>16 kHz</code></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- REAL-TIME REST -->
-                <div class="limit-card">
-                    <div class="limit-card-header">
-                        <div class="limit-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0116 0M4 11l-2-3M4 11l3-2M20 13a9 9 0 01-16 0M20 13l2 3M20 13l-3 2"/><circle cx="12" cy="12" r="2"/></svg>
-                        </div>
-                        <div>
-                            <div class="limit-card-title">Real-time REST</div>
-                            <div class="limit-card-sub">stt-rt</div>
-                        </div>
-                    </div>
-                    <div class="tier-table">
-                        <div class="tier-col">
-                            <div class="tier-name">Starter</div>
-                            <div class="tier-value">60</div>
-                            <div class="tier-unit">req / min</div>
-                        </div>
-                        <div class="tier-col">
-                            <div class="tier-name">Pro</div>
-                            <div class="tier-value">100</div>
-                            <div class="tier-unit">req / min</div>
-                        </div>
-                        <div class="tier-col featured">
-                            <div class="tier-name">Business</div>
-                            <div class="tier-value">4,000</div>
-                            <div class="tier-unit">req / min</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- WEBSOCKET STREAMING -->
-                <div class="limit-card">
-                    <div class="limit-card-header">
-                        <div class="limit-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"/></svg>
-                        </div>
-                        <div>
-                            <div class="limit-card-title">WebSocket Streaming</div>
-                            <div class="limit-card-sub">stt-ws</div>
-                        </div>
-                    </div>
-                    <div class="tier-table">
-                        <div class="tier-col">
-                            <div class="tier-name">Starter</div>
-                            <div class="tier-value">20</div>
-                            <div class="tier-unit">concurrent</div>
-                        </div>
-                        <div class="tier-col featured">
-                            <div class="tier-name">Pro</div>
-                            <div class="tier-value">100</div>
-                            <div class="tier-unit">concurrent</div>
-                        </div>
-                        <div class="tier-col featured">
-                            <div class="tier-name">Business</div>
-                            <div class="tier-value">100</div>
-                            <div class="tier-unit">concurrent</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <footer class="footer">
-            STT Playground · <span class="grad">Sarvam AI</span> · saaras:v3 · Real-time speech recognition
-        </footer>
+      <section class="card" aria-label="Voice settings">
+        <div class="card-header">
+          <div class="card-title"><span class="ico"><i class="fas fa-user-group"></i></span> Voice</div>
+          <span class="card-sub" id="speakerCount">37 SPEAKERS</span>
+        </div>
+        <div class="speaker-grid" id="speakerGrid" role="radiogroup" aria-label="Speaker"></div>
+        <div class="param-group">
+          <div class="param-label"><span class="name">Pace</span><span class="value" id="paceValue">1.10×</span></div>
+          <input type="range" class="slider" id="pace" min="0.5" max="2.0" step="0.05" value="1.1" aria-label="Speech pace" />
+        </div>
+        <div class="param-group">
+          <div class="param-label"><span class="name">Temperature</span><span class="value" id="tempValue">0.60</span></div>
+          <input type="range" class="slider" id="temp" min="0" max="1.5" step="0.05" value="0.6" aria-label="Temperature" />
+        </div>
+        <div class="param-row">
+          <div class="param-group">
+            <div class="param-label"><span class="name">Sample Rate</span></div>
+            <select class="select-input" id="sampleRate" aria-label="Sample rate">
+              <option value="8000">8,000 Hz</option><option value="16000">16,000 Hz</option>
+              <option value="22050" selected>22,050 Hz</option><option value="24000">24,000 Hz</option>
+              <option value="32000">32,000 Hz</option><option value="44100">44,100 Hz</option>
+              <option value="48000">48,000 Hz</option>
+            </select>
+          </div>
+          <div class="param-group">
+            <div class="param-label"><span class="name">Codec</span></div>
+            <select class="select-input" id="codec" aria-label="Audio codec">
+              <option value="mp3" selected>MP3</option><option value="wav">WAV</option><option value="pcm">PCM</option>
+            </select>
+          </div>
+        </div>
+        <div class="toggle-row" style="margin-top:0;">
+          <span class="label"><i class="fas fa-wand-sparkles"></i> Smart preprocessing</span>
+          <button class="toggle on" id="preprocessToggle" role="switch" aria-checked="true" aria-label="Toggle preprocessing"></button>
+        </div>
+      </section>
     </div>
 
-    <script>
-        const SAMPLE_RATE = 16000;
-        const CHUNK_SIZE = SAMPLE_RATE * 0.5; // 8000 samples (0.5 seconds)
+    <section class="player-panel" aria-label="Audio player">
+      <div class="player-grid">
+        <button class="play-btn" id="playBtn" disabled aria-label="Play or pause"><i class="fas fa-play" id="playIcon"></i></button>
+        <div class="player-info">
+          <div class="player-title" id="playerTitle">No audio generated yet</div>
+          <div class="player-meta" id="playerMeta"><span><i class="fas fa-circle-info"></i> Generate speech to enable playback</span></div>
+          <canvas class="waveform" id="waveform" aria-hidden="true"></canvas>
+        </div>
+        <div class="player-actions">
+          <button class="icon-btn" id="downloadBtn" disabled title="Download audio" aria-label="Download audio"><i class="fas fa-download"></i></button>
+        </div>
+      </div>
+    </section>
 
-        // Supported languages
-        const SUPPORTED_LANGUAGES = [
-            { name: "Hindi",       code: "hi-IN" },
-            { name: "Bengali",     code: "bn-IN" },
-            { name: "Kannada",     code: "kn-IN" },
-            { name: "Malayalam",   code: "ml-IN" },
-            { name: "Marathi",     code: "mr-IN" },
-            { name: "Odia",        code: "od-IN" },
-            { name: "Punjabi",     code: "pa-IN" },
-            { name: "Tamil",       code: "ta-IN" },
-            { name: "Telugu",      code: "te-IN" },
-            { name: "English",     code: "en-IN" },
-            { name: "Gujarati",    code: "gu-IN" },
-            { name: "Dogri",       code: "doi-IN" },
-            { name: "Assamese",    code: "as-IN" },
-            { name: "Urdu",        code: "ur-IN" },
-            { name: "Nepali",      code: "ne-IN" },
-            { name: "Konkani",     code: "kok-IN" },
-            { name: "Kashmiri",    code: "ks-IN" },
-            { name: "Sindhi",      code: "sd-IN" },
-            { name: "Sanskrit",    code: "sa-IN" },
-            { name: "Santali",     code: "sat-IN" },
-            { name: "Manipuri",    code: "mni-IN" },
-            { name: "Bodo",        code: "brx-IN" },
-            { name: "Maithili",    code: "mai-IN" }
-        ];
+    <section>
+      <div class="section-label" aria-hidden="true"><i class="fas fa-clock-rotate-left"></i> Recent Generations</div>
+      <div class="history-grid" id="historyGrid">
+        <div class="empty-state"><i class="fas fa-music"></i><div>Your generated clips will appear here. Click any card to replay.</div></div>
+      </div>
+    </section>
+  </div>
 
-        // DOM Elements
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const transcriptDiv = document.getElementById('transcript');
-        const debugLog = document.getElementById('debugLog');
-        const statusText = document.getElementById('statusText');
-        const vadIndicator = document.getElementById('vadIndicator');
-        const modeSelector = document.getElementById('modeSelector');
-        const modeButtons = document.querySelectorAll('.mode-btn');
-        const langSelect = document.getElementById('langSelect');
-        const langNoticeHeader = document.getElementById('langNoticeHeader');
-        const langNoticeBody = document.getElementById('langNoticeBody');
-        const langNoticeToggle = document.getElementById('langNoticeToggle');
-        const langGrid = document.getElementById('langGrid');
-        const langCountBadge = document.getElementById('langCountBadge');
-        const transcriptMeta = document.getElementById('transcriptMeta');
-        const debugHeader = document.getElementById('debugHeader');
-        const debugToggle = document.getElementById('debugToggle');
-        const visualizer = document.getElementById('visualizer');
-        const visPlaceholder = document.getElementById('visPlaceholder');
+  <!-- ==================== STT PANEL ==================== -->
+  <div class="panel" id="stt-panel" role="tabpanel">
+    <section class="card">
+      <div class="control-grid">
+        <div class="control-row">
+          <span class="control-label">Session</span>
+          <div class="btn-row">
+            <button id="startBtn" class="btn btn-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1H3v1a9 9 0 008 8.94V23h2v-3.06A9 9 0 0021 11v-1h-2z"/></svg>
+              Start Recording
+            </button>
+            <button id="stopBtn" class="btn btn-danger" disabled>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
+              Stop &amp; Flush
+            </button>
+          </div>
+          <div style="margin-top:8px;">
+            <div class="status-pill"><span class="vad-dot" id="vadIndicator"></span><span id="sttStatusText">Idle</span></div>
+          </div>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Mode</span>
+          <div class="mode-selector" id="modeSelector">
+            <button class="mode-btn active" data-mode="transcribe">transcribe</button>
+            <button class="mode-btn" data-mode="translate">translate</button>
+            <button class="mode-btn" data-mode="verbatim">verbatim</button>
+          </div>
+          <span class="control-label" style="margin-top:8px;">Language</span>
+          <div class="select-wrap"><select id="langSelect" class="stt-select"><option value="unknown">Auto-detect (unknown)</option></select></div>
+        </div>
+      </div>
+    </section>
 
-        // State variables
-        let audioContext = null;
-        let mediaStream = null;
-        let source = null;
-        let processor = null;
-        let analyser = null;
-        let webSocket = null;
-        let audioBuffer = new Float32Array(0);
-        let isRecording = false;
-        let isListening = false; // true between connect and final stop
-        let fullTranscript = "";
-        let selectedMode = "transcribe";
-        let selectedLanguage = "unknown";
+    <section class="card visualizer-card">
+      <div class="visualizer-wrap">
+        <canvas id="sttVisualizer"></canvas>
+        <div class="vis-placeholder" id="visPlaceholder">— Audio Idle · Press Start to Begin —</div>
+      </div>
+    </section>
 
-        // Visualizer state
-        let visCtx = null;
-        let visAnimId = null;
+    <section class="card transcript-card">
+      <div class="card-header">
+        <div class="card-title"><span class="ico"><i class="fas fa-align-left"></i></span> Live Transcript</div>
+        <span class="card-sub" id="transcriptMeta">0 words · 0 chars</span>
+      </div>
+      <div class="transcript-body" id="transcript"><span class="transcript-empty">Transcript will appear here once you start recording...</span></div>
+    </section>
 
-        // --- Populate Supported Languages UI ---
-        function buildLanguageUI() {
-            SUPPORTED_LANGUAGES.forEach(lang => {
-                const opt = document.createElement('option');
-                opt.value = lang.code;
-                opt.textContent = `${lang.name} (${lang.code})`;
-                langSelect.appendChild(opt);
-            });
+    <section class="card debug-card">
+      <div class="debug-header" id="debugHeader">
+        <div class="debug-title">
+          <div class="debug-dots"><span style="background:#ff5f57;"></span><span style="background:#febc2e;"></span><span style="background:#28c840;"></span></div>
+          debug.log
+        </div>
+        <span class="debug-toggle" id="debugToggle">▼ collapse</span>
+      </div>
+      <div id="debugLog"></div>
+    </section>
 
-            SUPPORTED_LANGUAGES.forEach(lang => {
-                const item = document.createElement('div');
-                item.className = 'lang-item';
-                item.innerHTML = `<span class="name">${lang.name}</span><span class="code">${lang.code}</span>`;
-                langGrid.appendChild(item);
-            });
+    <section class="card">
+      <div class="card-header" id="langNoticeHeader" style="cursor:pointer;user-select:none;margin-bottom:0;">
+        <div class="card-title">
+          <span class="ico"><i class="fas fa-globe"></i></span> Supported Languages
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--grad);color:#fff;padding:3px 9px;border-radius:10px;font-weight:600;" id="langCountBadge">23</span>
+        </div>
+        <span class="debug-toggle" id="langNoticeToggle">▶ expand</span>
+      </div>
+      <div class="collapsible-body" id="langNoticeBody">
+        <div style="padding:18px 0 4px;">
+          <div class="stt-lang-grid" id="sttLangGrid"></div>
+          <div class="lang-hint">Language codes are <strong>optional</strong>. When not specified or set to <code>unknown</code>, the model will automatically detect the input language and return a <code>language_probability</code> score indicating detection confidence.</div>
+        </div>
+      </div>
+    </section>
+  </div>
 
-            langCountBadge.textContent = SUPPORTED_LANGUAGES.length;
-        }
+  <!-- ==================== SPECS ==================== -->
+  <section class="limits-section">
+    <div class="section-header">
+      <h2>API <span class="grad">Limits &amp; Specs</span></h2>
+      <span class="sub">Reference · v3</span>
+    </div>
+    <div class="limits-grid">
+      <div class="limit-card general">
+        <div class="limit-card-header">
+          <div class="limit-icon"><i class="fas fa-sliders"></i></div>
+          <div><div class="limit-card-title">General Limits</div><div class="limit-card-sub">Applies to all STT endpoints</div></div>
+        </div>
+        <div class="limit-rows">
+          <div class="limit-row">
+            <div class="limit-key">Max audio duration<span class="hint">real-time REST</span></div>
+            <div class="limit-value"><span class="big">30</span><span class="unit">seconds</span></div>
+          </div>
+          <div class="limit-row">
+            <div class="limit-key">Supported formats<span class="hint">auto-detected</span></div>
+            <div class="limit-value"><div class="format-chips"><span class="chip">WAV</span><span class="chip">MP3</span><span class="chip">AAC</span><span class="chip">AIFF</span><span class="chip">OGG</span><span class="chip">OPUS</span><span class="chip">FLAC</span><span class="chip">MP4</span><span class="chip">AMR</span><span class="chip">WMA</span><span class="chip">WebM</span></div></div>
+          </div>
+          <div class="limit-row">
+            <div class="limit-key">Raw PCM input<span class="hint">pcm_s16le · pcm_l16 · pcm_raw</span></div>
+            <div class="limit-value">Requires <code>input_audio_codec</code><span class="note">Must be sampled at <code>16 kHz</code></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="limit-card">
+        <div class="limit-card-header">
+          <div class="limit-icon"><i class="fas fa-arrows-rotate"></i></div>
+          <div><div class="limit-card-title">Real-time REST</div><div class="limit-card-sub">stt-rt</div></div>
+        </div>
+        <div class="tier-table">
+          <div class="tier-col"><div class="tier-name">Starter</div><div class="tier-value">60</div><div class="tier-unit">req / min</div></div>
+          <div class="tier-col"><div class="tier-name">Pro</div><div class="tier-value">100</div><div class="tier-unit">req / min</div></div>
+          <div class="tier-col featured"><div class="tier-name">Business</div><div class="tier-value">4,000</div><div class="tier-unit">req / min</div></div>
+        </div>
+      </div>
+      <div class="limit-card">
+        <div class="limit-card-header">
+          <div class="limit-icon"><i class="fas fa-wave-square"></i></div>
+          <div><div class="limit-card-title">WebSocket Streaming</div><div class="limit-card-sub">stt-ws</div></div>
+        </div>
+        <div class="tier-table">
+          <div class="tier-col"><div class="tier-name">Starter</div><div class="tier-value">20</div><div class="tier-unit">concurrent</div></div>
+          <div class="tier-col featured"><div class="tier-name">Pro</div><div class="tier-value">100</div><div class="tier-unit">concurrent</div></div>
+          <div class="tier-col featured"><div class="tier-name">Business</div><div class="tier-value">100</div><div class="tier-unit">concurrent</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        // --- Debug Logging Utility ---
-        function logDebug(message, data = null) {
-            const timestamp = new Date().toISOString().split('T')[1].replace('Z', '');
-            let logMessage = `[${timestamp}] ${message}`;
-            if (data) {
-                logMessage += `\n${JSON.stringify(data, null, 2)}`;
-            }
-            debugLog.textContent += logMessage + "\n\n";
-            debugLog.scrollTop = debugLog.scrollHeight;
-            console.log(logMessage);
-        }
+  <footer class="footer">Aria Voice Studio · <span class="grad">Neural Voice AI</span> · Real-time synthesis &amp; transcription</footer>
+</div>
 
-        // --- Transcript meta ---
-        function updateTranscriptMeta() {
-            const text = fullTranscript.trim();
-            const words = text ? text.split(/\s+/).length : 0;
-            const chars = text.length;
-            transcriptMeta.textContent = `${words} word${words !== 1 ? 's' : ''} · ${chars} char${chars !== 1 ? 's' : ''}`;
-        }
+<div class="toast-container" id="toastContainer" role="region" aria-live="polite" aria-atomic="false"></div>
 
-        function renderTranscript() {
-            if (!fullTranscript) {
-                transcriptDiv.innerHTML = isListening
-                    ? `<span class="transcript-empty">Listening...</span><span class="transcript-cursor"></span>`
-                    : `<span class="transcript-empty">Transcript will appear here once you start recording...</span>`;
-            } else {
-                transcriptDiv.innerHTML = `${fullTranscript}<span class="transcript-cursor" style="${isListening ? '' : 'display:none;'}"></span>`;
-            }
-            updateTranscriptMeta();
-        }
+<script>
+/* ===== SHARED ===== */
+const $ = id => document.getElementById(id);
+const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-        // --- Audio Processing Utilities ---
-        function floatTo16BitPCM(input) {
-            const output = new Int16Array(input.length);
-            for (let i = 0; i < input.length; i++) {
-                const s = Math.max(-1, Math.min(1, input[i]));
-                output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-            }
-            return output;
-        }
+function showToast(message, type = 'info', duration = 3500) {
+  const container = $('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.setAttribute('role', 'status');
+  const icon = type === 'error' ? 'fa-circle-exclamation' : type === 'success' ? 'fa-circle-check' : 'fa-circle-info';
+  toast.innerHTML = `<i class="fas ${icon}"></i><span>${escapeHtml(message)}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.classList.add('fadeOut'); setTimeout(() => toast.remove(), 300); }, duration);
+}
 
-        function sendAudioChunk(int16Data) {
-            if (!webSocket || webSocket.readyState !== WebSocket.OPEN) return;
+/* ===== TAB SWITCHING ===== */
+const tabBtns = document.querySelectorAll('.tab-btn');
+const panels = document.querySelectorAll('.panel');
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    tabBtns.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected','true');
+    panels.forEach(p => p.classList.remove('active'));
+    $(tab + '-panel').classList.add('active');
+    if (tab === 'tts' && !ttsState.isPlaying) requestAnimationFrame(drawStaticWaveform);
+    if (tab === 'stt') requestAnimationFrame(() => { resizeSttCanvas(); });
+  });
+});
 
-            const blob = new Blob([int16Data.buffer], { type: 'audio/wav' });
-            const reader = new FileReader();
+/* ===== TTS MODULE ===== */
+const TTS_LANGUAGES = [
+  { code:'hi-IN', name:'Hindi', script:'हिन्दी', phrases:['नमस्ते, आप कैसे हैं?','आज मौसम बहुत सुहावना है।','भारत एक अद्भुत देश है।'] },
+  { code:'bn-IN', name:'Bengali', script:'বাংলা', phrases:['নমস্কার, আপনি কেমন আছেন?','আজ আবহাওয়া খুব সুন্দর।','বাংলা সাহিত্য অত্যন্ত সমৃদ্ধ।'] },
+  { code:'ta-IN', name:'Tamil', script:'தமிழ்', phrases:['வணக்கம், நீங்கள் எப்படி இருக்கிறீர்கள்?','இன்று வானிலை அருமை.','தமிழ் ஒரு செம்மொழி.'] },
+  { code:'te-IN', name:'Telugu', script:'తెలుగు', phrases:['నమస్తే, మీరు ఎలా ఉన్నారు?','ఈ రోజు వాతావరణం చాలా బాగుంది.','తెలుగు ఒక సుందర భాష.'] },
+  { code:'gu-IN', name:'Gujarati', script:'ગુજરાતી', phrases:['નમસ્તે, તમે કેમ છો?','આજે હવામાન ઘણું સુંદર છે.','ગુજરાતી સંસ્કૃતિ ઘણી સમૃદ્ધ છે.'] },
+  { code:'kn-IN', name:'Kannada', script:'ಕನ್ನಡ', phrases:['ನಮಸ್ಕಾರ, ನೀವು ಹೇಗಿದ್ದೀರಿ?','ಇಂದು ಹವಾಮಾನ ತುಂಬ ಸುಂದರವಾಗಿದೆ.','ಕನ್ನಡ ಒಂದು ಸುಂದರ ಭಾಷೆ.'] },
+  { code:'ml-IN', name:'Malayalam', script:'മലയാളം', phrases:['നമസ്കാരം, സുഖമാണോ?','ഇന്ന് കാലാവസ്ഥ വളരെ മനോഹരമാണ്.','മലയാളം ഒരു മനോഹര ഭാഷയാണ്.'] },
+  { code:'mr-IN', name:'Marathi', script:'मराठी', phrases:['नमस्कार, तुम्ही कसे आहात?','आज हवामान खूप सुंदर आहे.','मराठी एक सुंदर भाषा आहे.'] },
+  { code:'pa-IN', name:'Punjabi', script:'ਪੰਜਾਬੀ', phrases:['ਸਤ ਸ੍ਰੀ ਅਕਾਲ, ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ?','ਅੱਜ ਮੌਸਮ ਬਹੁਤ ਸੋਹਣਾ ਹੈ।','ਪੰਜਾਬੀ ਇੱਕ ਸੋਹਣੀ ਭਾਸ਼ਾ ਹੈ।'] },
+  { code:'od-IN', name:'Odia', script:'ଓଡ଼ିଆ', phrases:['ନମସ୍କାର, ଆପଣ କେମିତି ଅଛନ୍ତି?','ଆଜି ପାଣିପାଗ ବହୁତ ସୁନ୍ଦର ଅଛି।','ଓଡ଼ିଆ ଏକ ସୁନ୍ଦର ଭାଷା।'] },
+  { code:'en-IN', name:'English', script:'English', phrases:['Hello, how are you doing today?','The weather is lovely today.','Technology connects us all.'] }
+];
+const SPEAKERS = ['Shubh','Aditya','Ritu','Priya','Neha','Rahul','Pooja','Rohan','Simran','Kavya','Amit','Dev','Ishita','Shreya','Ratan','Varun','Manan','Sumit','Roopa','Kabir','Aayan','Ashutosh','Advait','Anand','Tanya','Tarun','Sunny','Mani','Gokul','Vijay','Shruti','Suhani','Mohit','Kavitha','Rehan','Soham','Rupali'];
 
-            reader.onloadend = function() {
-                const base64data = reader.result.split(',')[1];
-                const payload = {
-                    audio: {
-                        data: base64data,
-                        encoding: "audio/wav",
-                        sample_rate: SAMPLE_RATE
-                    }
-                };
-                webSocket.send(JSON.stringify(payload));
-                logDebug('Sent audio chunk', { sizeBytes: blob.size, samples: int16Data.length });
-            };
+const ttsState = {
+  language:'hi-IN', speaker:'Shubh', pace:1.1, temperature:0.6, sampleRate:22050,
+  codec:'mp3', preprocessing:true, autoMode:false,
+  currentAudio:null, currentBlob:null, currentText:'', currentMeta:null,
+  history:[], isPlaying:false, audioContext:null, analyser:null, source:null,
+  animationId:null, autoTimer:null
+};
 
-            reader.readAsDataURL(blob);
-        }
+const ttsLangGrid = $('ttsLangGrid'), speakerGrid = $('speakerGrid'), phrasesEl = $('phrases');
+const textInput = $('textInput'), charCount = $('charCount'), generateBtn = $('generateBtn');
+const autoToggle = $('autoToggle'), preprocessToggle = $('preprocessToggle');
+const playBtn = $('playBtn'), playIcon = $('playIcon'), downloadBtn = $('downloadBtn');
+const playerTitle = $('playerTitle'), playerMeta = $('playerMeta'), waveformCanvas = $('waveform');
+const historyGrid = $('historyGrid'), globalStatusText = $('globalStatusText'), globalStatus = $('globalStatus');
+const paceSlider = $('pace'), paceValue = $('paceValue'), tempSlider = $('temp'), tempValue = $('tempValue');
+const sampleRateSel = $('sampleRate'), codecSel = $('codec'), liveBadge = $('liveBadge');
 
-        // --- WebSocket Setup ---
-        function connectWebSocket() {
-            const wsUrl = `wss://www.sarvam.ai/api/playground/stt-ws?language-code=${encodeURIComponent(selectedLanguage)}&model=saaras:v3&mode=${selectedMode}&vad_signals=true&high_vad_sensitivity=true`;
+function setGlobalStatus(text, busy = false) {
+  globalStatusText.textContent = text;
+  globalStatus.classList.toggle('busy', busy);
+}
+function updateSliderFill(slider) {
+  const min = parseFloat(slider.min), max = parseFloat(slider.max), val = parseFloat(slider.value);
+  slider.style.setProperty('--p', ((val - min) / (max - min)) * 100 + '%');
+}
 
-            logDebug(`Attempting to connect to WebSocket...`, { url: wsUrl, mode: selectedMode, language: selectedLanguage });
-            statusText.innerText = "Connecting...";
+function renderTtsLanguages() {
+  ttsLangGrid.innerHTML = TTS_LANGUAGES.map(l => `
+    <button type="button" class="tts-lang-pill ${l.code === ttsState.language ? 'active' : ''}" data-code="${l.code}" role="radio" aria-checked="${l.code === ttsState.language}">
+      <span class="tts-lang-script">${l.script}</span><span class="tts-lang-name">${l.name}</span><span class="tts-lang-code">${l.code}</span>
+    </button>`).join('');
+  ttsLangGrid.querySelectorAll('.tts-lang-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      ttsState.language = p.dataset.code;
+      renderTtsLanguages(); renderPhrases();
+      const lang = TTS_LANGUAGES.find(l => l.code === ttsState.language);
+      textInput.placeholder = `Type your text in ${lang.name} (${lang.script})...`;
+      if (ttsState.autoMode && textInput.value.trim()) scheduleAutoGenerate();
+    });
+  });
+}
+function renderPhrases() {
+  const lang = TTS_LANGUAGES.find(l => l.code === ttsState.language);
+  phrasesEl.innerHTML = lang.phrases.map(p => `<button type="button" class="phrase-chip">${p}</button>`).join('');
+  phrasesEl.querySelectorAll('.phrase-chip').forEach(c => {
+    c.addEventListener('click', () => {
+      textInput.value = c.textContent; updateCharCount(); textInput.focus();
+      if (ttsState.autoMode) scheduleAutoGenerate();
+    });
+  });
+}
+function renderSpeakers() {
+  speakerGrid.innerHTML = SPEAKERS.map(name => `
+    <button type="button" class="speaker-card ${name === ttsState.speaker ? 'active' : ''}" data-name="${name}" role="radio" aria-checked="${name === ttsState.speaker}">
+      <div class="speaker-avatar">${name.charAt(0)}</div><div class="speaker-name">${name}</div>
+    </button>`).join('');
+  speakerGrid.querySelectorAll('.speaker-card').forEach(c => {
+    c.addEventListener('click', () => {
+      ttsState.speaker = c.dataset.name;
+      speakerGrid.querySelectorAll('.speaker-card').forEach(x => { x.classList.remove('active'); x.setAttribute('aria-checked','false'); });
+      c.classList.add('active'); c.setAttribute('aria-checked','true');
+      if (ttsState.autoMode && textInput.value.trim()) scheduleAutoGenerate();
+    });
+  });
+  $('speakerCount').textContent = SPEAKERS.length + ' SPEAKERS';
+}
+function renderHistory() {
+  if (ttsState.history.length === 0) {
+    historyGrid.innerHTML = `<div class="empty-state"><i class="fas fa-music"></i><div>Your generated clips will appear here. Click any card to replay.</div></div>`;
+    return;
+  }
+  historyGrid.innerHTML = ttsState.history.map(h => {
+    const lang = TTS_LANGUAGES.find(l => l.code === h.language);
+    const time = h.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `<button type="button" class="history-card" data-id="${h.id}">
+      <div class="history-text">${escapeHtml(h.text)}</div>
+      <div class="history-meta"><div class="left"><span class="history-tag">${lang ? lang.script : h.language}</span><span class="history-speaker">${h.speaker.toLowerCase()}</span></div><span class="history-time">${time}</span></div>
+    </button>`;
+  }).join('');
+  historyGrid.querySelectorAll('.history-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = parseFloat(card.dataset.id);
+      const item = ttsState.history.find(h => h.id === id);
+      if (item) playFromHistory(item);
+    });
+  });
+}
+function updateCharCount() {
+  const len = textInput.value.length;
+  charCount.querySelector('.count').textContent = len;
+  charCount.classList.remove('warn', 'danger');
+  if (len > 2500) charCount.classList.add('danger');
+  else if (len > 2000) charCount.classList.add('warn');
+}
 
-            webSocket = new WebSocket(wsUrl);
+function setupCanvas() {
+  const canvas = waveformCanvas, dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.max(1, rect.width * dpr); canvas.height = Math.max(1, rect.height * dpr);
+  const ctx = canvas.getContext('2d'); ctx.setTransform(1,0,0,1,0,0); ctx.scale(dpr, dpr);
+  return { ctx, w: rect.width, h: rect.height };
+}
+function drawStaticWaveform() {
+  const { ctx, w, h } = setupCanvas(); ctx.clearRect(0,0,w,h);
+  const bars = 60, barWidth = w / bars;
+  for (let i = 0; i < bars; i++) {
+    const t = i / bars;
+    const amp = (Math.sin(t * Math.PI * 4) * 0.3 + Math.sin(t * Math.PI * 9) * 0.2 + 0.4) * h * 0.5;
+    const x = i * barWidth + 2, bw = Math.max(1, barWidth - 4), y = (h - amp) / 2;
+    const g = ctx.createLinearGradient(0, y, 0, y + amp);
+    g.addColorStop(0, 'rgba(0, 217, 255, 0.2)'); g.addColorStop(1, 'rgba(139, 92, 246, 0.2)');
+    ctx.fillStyle = g; ctx.fillRect(x, y, bw, Math.max(2, amp));
+  }
+}
+function drawAnimatedWaveform() {
+  if (!ttsState.isPlaying || !ttsState.analyser) { drawStaticWaveform(); return; }
+  const { ctx, w, h } = setupCanvas(); ctx.clearRect(0,0,w,h);
+  const data = new Uint8Array(ttsState.analyser.frequencyBinCount);
+  ttsState.analyser.getByteFrequencyData(data);
+  const bars = 60, barWidth = w / bars, step = Math.max(1, Math.floor(data.length / bars));
+  for (let i = 0; i < bars; i++) {
+    const value = data[i * step] / 255;
+    const amp = Math.max(3, value * h * 0.95);
+    const x = i * barWidth + 2, bw = Math.max(1, barWidth - 4), y = (h - amp) / 2;
+    const g = ctx.createLinearGradient(0, y, 0, y + amp);
+    g.addColorStop(0, 'rgba(0, 217, 255, 0.95)'); g.addColorStop(0.5, 'rgba(139, 92, 246, 1)'); g.addColorStop(1, 'rgba(0, 217, 255, 0.9)');
+    ctx.fillStyle = g; ctx.fillRect(x, y, bw, amp);
+  }
+  ttsState.animationId = requestAnimationFrame(drawAnimatedWaveform);
+}
 
-            webSocket.onopen = function(event) {
-                logDebug('✅ WebSocket CONNECTED', { readyState: webSocket.readyState, mode: selectedMode, language: selectedLanguage });
-                statusText.innerText = "Connected. Starting audio...";
-                startAudioProcessing();
-            };
+async function generateSpeech(text) {
+  if (!text.trim()) { showToast('Please enter some text to convert to speech', 'error'); return null; }
+  if (text.length > 2500) { showToast('Text exceeds 2500 character limit. Please shorten it.', 'error'); return null; }
+  generateBtn.disabled = true; generateBtn.classList.add('loading');
+  setGlobalStatus('Synthesizing...', true);
+  const body = {
+    text, target_language_code: ttsState.language, speaker: ttsState.speaker.toLowerCase(),
+    model: 'bulbul:v3-beta', pace: ttsState.pace, speech_sample_rate: parseInt(ttsState.sampleRate),
+    temperature: ttsState.temperature, enable_preprocessing: ttsState.preprocessing, output_audio_codec: ttsState.codec
+  };
+  try {
+    const response = await fetch('https://proxy.cors.sh/https://www.sarvam.ai/api/playground/tts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': '*/*' }, body: JSON.stringify(body)
+    });
+    if (!response.ok) {
+      let errMsg = `API error ${response.status}`;
+      try { const errData = await response.json(); if (errData.message) errMsg += ': ' + errData.message; else if (errData.error) errMsg += ': ' + errData.error; }
+      catch (e) { const errText = await response.text().catch(() => ''); if (errText) errMsg += ': ' + errText.substring(0, 100); }
+      throw new Error(errMsg);
+    }
+    const blob = await response.blob();
+    if (blob.size === 0) throw new Error('Received empty audio data');
+    return blob;
+  } catch (err) {
+    console.error('TTS error:', err);
+    showToast(err.message || 'Failed to generate speech', 'error', 5000);
+    return null;
+  } finally {
+    generateBtn.disabled = false; generateBtn.classList.remove('loading'); setGlobalStatus('Ready');
+  }
+}
 
-            webSocket.onmessage = function(event) {
-                const message = JSON.parse(event.data);
+async function playBlob(blob, text, meta) {
+  if (ttsState.currentAudio) { ttsState.currentAudio.pause(); ttsState.currentAudio = null; }
+  if (ttsState.source) { try { ttsState.source.disconnect(); } catch(e){} ttsState.source = null; }
+  if (ttsState.animationId) { cancelAnimationFrame(ttsState.animationId); ttsState.animationId = null; }
+  const audioUrl = URL.createObjectURL(blob);
+  const audio = new Audio(audioUrl); audio.crossOrigin = 'anonymous';
+  ttsState.currentAudio = audio; ttsState.currentBlob = blob; ttsState.currentText = text; ttsState.currentMeta = meta;
+  if (!ttsState.audioContext) {
+    try {
+      ttsState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      ttsState.analyser = ttsState.audioContext.createAnalyser();
+      ttsState.analyser.fftSize = 128; ttsState.analyser.smoothingTimeConstant = 0.78;
+    } catch(e) { console.warn('Web Audio API not available'); }
+  }
+  if (ttsState.audioContext) {
+    try { ttsState.source = ttsState.audioContext.createMediaElementSource(audio); ttsState.source.connect(ttsState.analyser); ttsState.analyser.connect(ttsState.audioContext.destination); }
+    catch(e) { console.warn('Source setup failed:', e); }
+  }
+  audio.addEventListener('ended', () => {
+    ttsState.isPlaying = false; playIcon.className = 'fas fa-play';
+    if (ttsState.animationId) { cancelAnimationFrame(ttsState.animationId); ttsState.animationId = null; }
+    drawStaticWaveform();
+  });
+  audio.addEventListener('error', () => { showToast('Audio playback error', 'error'); ttsState.isPlaying = false; playIcon.className = 'fas fa-play'; });
+  const lang = TTS_LANGUAGES.find(l => l.code === meta.language);
+  playerTitle.textContent = text.length > 60 ? text.slice(0,60)+'...' : text;
+  playerMeta.innerHTML = `<span><i class="fas fa-language"></i> ${lang ? lang.name : meta.language}</span><span><i class="fas fa-microphone"></i> ${meta.speaker}</span><span><i class="fas fa-gauge-high"></i> ${meta.pace.toFixed(2)}×</span><span><i class="fas fa-music"></i> ${meta.codec.toUpperCase()}</span>`;
+  playBtn.disabled = false; downloadBtn.disabled = false;
+  try {
+    if (ttsState.audioContext && ttsState.audioContext.state === 'suspended') await ttsState.audioContext.resume();
+    await audio.play(); ttsState.isPlaying = true; playIcon.className = 'fas fa-pause'; drawAnimatedWaveform();
+  } catch(err) { console.error('Playback failed:', err); showToast('Playback failed: ' + err.message, 'error'); }
+}
+function togglePlayPause() {
+  if (!ttsState.currentAudio) return;
+  if (ttsState.isPlaying) {
+    ttsState.currentAudio.pause(); ttsState.isPlaying = false; playIcon.className = 'fas fa-play';
+    if (ttsState.animationId) { cancelAnimationFrame(ttsState.animationId); ttsState.animationId = null; }
+    drawStaticWaveform();
+  } else {
+    ttsState.currentAudio.play().then(() => { ttsState.isPlaying = true; playIcon.className = 'fas fa-pause'; drawAnimatedWaveform(); }).catch(err => showToast('Resume failed: ' + err.message, 'error'));
+  }
+}
+function playFromHistory(item) {
+  playBlob(item.blob, item.text, { language: item.language, speaker: item.speaker, pace: item.pace, codec: item.codec });
+  showToast(`Replaying: ${item.text.slice(0,40)}${item.text.length > 40 ? '...' : ''}`, 'info');
+}
+function addToHistory(text, blob, meta) {
+  const url = URL.createObjectURL(blob);
+  ttsState.history.unshift({ id: Date.now() + Math.random(), text, blob, url, language: meta.language, speaker: meta.speaker, pace: meta.pace, codec: meta.codec, timestamp: new Date() });
+  if (ttsState.history.length > 12) { const removed = ttsState.history.pop(); URL.revokeObjectURL(removed.url); }
+  renderHistory();
+}
+function scheduleAutoGenerate() {
+  if (ttsState.autoTimer) clearTimeout(ttsState.autoTimer);
+  liveBadge.classList.add('on');
+  ttsState.autoTimer = setTimeout(async () => {
+    liveBadge.classList.remove('on');
+    const text = textInput.value.trim();
+    if (!text || text.length > 2500) return;
+    const blob = await generateSpeech(text);
+    if (blob) {
+      const meta = { language: ttsState.language, speaker: ttsState.speaker, pace: ttsState.pace, codec: ttsState.codec };
+      await playBlob(blob, text, meta); addToHistory(text, blob, meta);
+    }
+  }, 1000);
+}
 
-                if (message.type === "data") {
-                    const transcriptChunk = message.data.transcript
-                        .replace(/<nospeech>/gi, "")
-                        .replace(/<\/nospeech>/gi, "")
-                        .trim();
+generateBtn.addEventListener('click', async () => {
+  const text = textInput.value;
+  const blob = await generateSpeech(text);
+  if (blob) {
+    const meta = { language: ttsState.language, speaker: ttsState.speaker, pace: ttsState.pace, codec: ttsState.codec };
+    await playBlob(blob, text, meta); addToHistory(text, blob, meta);
+    showToast('Speech generated successfully', 'success');
+  }
+});
+textInput.addEventListener('input', () => { updateCharCount(); if (ttsState.autoMode) scheduleAutoGenerate(); });
+playBtn.addEventListener('click', togglePlayPause);
+downloadBtn.addEventListener('click', () => {
+  if (!ttsState.currentBlob) return;
+  const lang = TTS_LANGUAGES.find(l => l.code === ttsState.language);
+  const ext = ttsState.codec === 'wav' ? 'wav' : ttsState.codec === 'pcm' ? 'pcm' : 'mp3';
+  const filename = `aria-${lang ? lang.code : 'audio'}-${ttsState.speaker.toLowerCase()}-${Date.now()}.${ext}`;
+  const url = URL.createObjectURL(ttsState.currentBlob);
+  const a = document.createElement('a'); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('Audio downloaded', 'success');
+});
+ $('copyBtn').addEventListener('click', () => {
+  if (!textInput.value) { showToast('Nothing to copy', 'info'); return; }
+  textInput.select();
+  navigator.clipboard.writeText(textInput.value).then(() => showToast('Text copied to clipboard', 'success')).catch(() => showToast('Copy failed', 'error'));
+});
+ $('clearBtn').addEventListener('click', () => { textInput.value = ''; updateCharCount(); textInput.focus(); });
+autoToggle.addEventListener('click', () => {
+  ttsState.autoMode = !ttsState.autoMode;
+  autoToggle.classList.toggle('on', ttsState.autoMode);
+  autoToggle.setAttribute('aria-checked', ttsState.autoMode);
+  if (ttsState.autoMode) { showToast('Live mode on — speech generates automatically as you type', 'info'); liveBadge.classList.add('on'); }
+  else { showToast('Live mode off', 'info'); liveBadge.classList.remove('on'); if (ttsState.autoTimer) { clearTimeout(ttsState.autoTimer); ttsState.autoTimer = null; } }
+});
+preprocessToggle.addEventListener('click', () => {
+  ttsState.preprocessing = !ttsState.preprocessing;
+  preprocessToggle.classList.toggle('on', ttsState.preprocessing);
+  preprocessToggle.setAttribute('aria-checked', ttsState.preprocessing);
+});
+paceSlider.addEventListener('input', () => {
+  ttsState.pace = parseFloat(paceSlider.value); paceValue.textContent = ttsState.pace.toFixed(2) + '×';
+  updateSliderFill(paceSlider); if (ttsState.autoMode && textInput.value.trim()) scheduleAutoGenerate();
+});
+tempSlider.addEventListener('input', () => {
+  ttsState.temperature = parseFloat(tempSlider.value); tempValue.textContent = ttsState.temperature.toFixed(2);
+  updateSliderFill(tempSlider);
+});
+sampleRateSel.addEventListener('change', () => { ttsState.sampleRate = parseInt(sampleRateSel.value); });
+codecSel.addEventListener('change', () => { ttsState.codec = codecSel.value; });
 
-                    if (transcriptChunk) {
-                        logDebug('📩 Received DATA', {
-                            transcript: transcriptChunk,
-                            language_code: message.data.language_code || null,
-                            language_probability: message.data.language_probability || null
-                        });
-                        fullTranscript += (fullTranscript ? " " : "") + transcriptChunk;
-                        renderTranscript();
-                    }
-                } else if (message.type === "events") {
-                    const signalType = message.data?.signal_type;
-                    logDebug('⚡ Received EVENT', { signal_type: signalType });
-                    if (signalType === "START_SPEECH") {
-                        vadIndicator.classList.add('active');
-                    } else if (signalType === "END_SPEECH") {
-                        vadIndicator.classList.remove('active');
-                    }
-                } else if (message.type === "error") {
-                    logDebug('❌ Received ERROR', { error: message.data });
-                    statusText.innerText = "Server Error";
-                } else {
-                    logDebug('❓ Received UNKNOWN MESSAGE', message);
-                }
-            };
+/* ===== STT MODULE ===== */
+const STT_SAMPLE_RATE = 16000, STT_CHUNK_SIZE = STT_SAMPLE_RATE * 0.5;
+const SUPPORTED_LANGUAGES = [
+  {name:"Hindi",code:"hi-IN"},{name:"Bengali",code:"bn-IN"},{name:"Kannada",code:"kn-IN"},{name:"Malayalam",code:"ml-IN"},
+  {name:"Marathi",code:"mr-IN"},{name:"Odia",code:"od-IN"},{name:"Punjabi",code:"pa-IN"},{name:"Tamil",code:"ta-IN"},
+  {name:"Telugu",code:"te-IN"},{name:"English",code:"en-IN"},{name:"Gujarati",code:"gu-IN"},{name:"Dogri",code:"doi-IN"},
+  {name:"Assamese",code:"as-IN"},{name:"Urdu",code:"ur-IN"},{name:"Nepali",code:"ne-IN"},{name:"Konkani",code:"kok-IN"},
+  {name:"Kashmiri",code:"ks-IN"},{name:"Sindhi",code:"sd-IN"},{name:"Sanskrit",code:"sa-IN"},{name:"Santali",code:"sat-IN"},
+  {name:"Manipuri",code:"mni-IN"},{name:"Bodo",code:"brx-IN"},{name:"Maithili",code:"mai-IN"}
+];
 
-            webSocket.onerror = function(event) {
-                logDebug('⚠️ WebSocket ERROR', { event: 'See browser console for details' });
-                statusText.innerText = "WS Error";
-            };
+const sttStartBtn = $('startBtn'), sttStopBtn = $('stopBtn');
+const sttTranscript = $('transcript'), sttDebugLog = $('debugLog');
+const sttStatusText = $('sttStatusText'), sttVadIndicator = $('vadIndicator');
+const sttModeButtons = document.querySelectorAll('.mode-btn'), sttLangSelect = $('langSelect');
+const sttLangNoticeHeader = $('langNoticeHeader'), sttLangNoticeBody = $('langNoticeBody');
+const sttLangNoticeToggle = $('langNoticeToggle'), sttLangGrid = $('sttLangGrid');
+const sttLangCountBadge = $('langCountBadge'), sttTranscriptMeta = $('transcriptMeta');
+const sttDebugHeader = $('debugHeader'), sttDebugToggle = $('debugToggle');
+const sttVisualizer = $('sttVisualizer'), sttVisPlaceholder = $('visPlaceholder');
 
-            webSocket.onclose = function(event) {
-                logDebug('🔌 WebSocket CLOSED', { code: event.code, reason: event.reason, wasClean: event.wasClean });
-                vadIndicator.classList.remove('active');
-                if (isRecording) {
-                    statusText.innerText = "Disconnected unexpectedly.";
-                    stopRecording(true);
-                }
-            };
-        }
+let sttAudioContext = null, sttMediaStream = null, sttSource = null;
+let sttProcessor = null, sttAnalyser = null, sttWebSocket = null;
+let sttAudioBuffer = new Float32Array(0);
+let sttIsRecording = false, sttIsListening = false;
+let sttFullTranscript = "";
+let sttSelectedMode = "transcribe", sttSelectedLanguage = "unknown";
+let sttVisCtx = null;
 
-        // --- Audio Capture & Processing ---
-        async function startAudioProcessing() {
-            try {
-                logDebug('Requesting microphone access...');
-                mediaStream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        channelCount: 1,
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        sampleRate: SAMPLE_RATE
-                    }
-                });
-                logDebug('🎤 Microphone access granted');
+function buildSttLanguageUI() {
+  SUPPORTED_LANGUAGES.forEach(lang => {
+    const opt = document.createElement('option'); opt.value = lang.code; opt.textContent = `${lang.name} (${lang.code})`; sttLangSelect.appendChild(opt);
+  });
+  SUPPORTED_LANGUAGES.forEach(lang => {
+    const item = document.createElement('div'); item.className = 'stt-lang-item';
+    item.innerHTML = `<span class="name">${lang.name}</span><span class="code">${lang.code}</span>`; sttLangGrid.appendChild(item);
+  });
+  sttLangCountBadge.textContent = SUPPORTED_LANGUAGES.length;
+}
+function logDebug(message, data = null) {
+  const timestamp = new Date().toISOString().split('T')[1].replace('Z','');
+  let logMessage = `[${timestamp}] ${message}`;
+  if (data) logMessage += `\n${JSON.stringify(data, null, 2)}`;
+  sttDebugLog.textContent += logMessage + "\n\n";
+  sttDebugLog.scrollTop = sttDebugLog.scrollHeight;
+  console.log(logMessage);
+}
+function updateTranscriptMeta() {
+  const text = sttFullTranscript.trim();
+  const words = text ? text.split(/\s+/).length : 0;
+  const chars = text.length;
+  sttTranscriptMeta.textContent = `${words} word${words !== 1 ? 's' : ''} · ${chars} char${chars !== 1 ? 's' : ''}`;
+}
+function renderSttTranscript() {
+  if (!sttFullTranscript) {
+    sttTranscript.innerHTML = sttIsListening
+      ? `<span class="transcript-empty">Listening...</span><span class="transcript-cursor"></span>`
+      : `<span class="transcript-empty">Transcript will appear here once you start recording...</span>`;
+  } else {
+    sttTranscript.innerHTML = `${escapeHtml(sttFullTranscript)}<span class="transcript-cursor" style="${sttIsListening ? '' : 'display:none;'}"></span>`;
+  }
+  updateTranscriptMeta();
+}
+function floatTo16BitPCM(input) {
+  const output = new Int16Array(input.length);
+  for (let i = 0; i < input.length; i++) { const s = Math.max(-1, Math.min(1, input[i])); output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF; }
+  return output;
+}
+function sendAudioChunk(int16Data) {
+  if (!sttWebSocket || sttWebSocket.readyState !== WebSocket.OPEN) return;
+  const blob = new Blob([int16Data.buffer], { type: 'audio/wav' });
+  const reader = new FileReader();
+  reader.onloadend = function() {
+    const base64data = reader.result.split(',')[1];
+    sttWebSocket.send(JSON.stringify({ audio: { data: base64data, encoding: "audio/wav", sample_rate: STT_SAMPLE_RATE } }));
+    logDebug('Sent audio chunk', { sizeBytes: blob.size, samples: int16Data.length });
+  };
+  reader.readAsDataURL(blob);
+}
+function connectWebSocket() {
+  const wsUrl = `wss://www.sarvam.ai/api/playground/stt-ws?language-code=${encodeURIComponent(sttSelectedLanguage)}&model=saaras:v3&mode=${sttSelectedMode}&vad_signals=true&high_vad_sensitivity=true`;
+  logDebug(`Attempting to connect to WebSocket...`, { url: wsUrl, mode: sttSelectedMode, language: sttSelectedLanguage });
+  sttStatusText.innerText = "Connecting...";
+  sttWebSocket = new WebSocket(wsUrl);
+  sttWebSocket.onopen = function(event) {
+    logDebug('✅ WebSocket CONNECTED', { readyState: sttWebSocket.readyState, mode: sttSelectedMode, language: sttSelectedLanguage });
+    sttStatusText.innerText = "Connected. Starting audio..."; startAudioProcessing();
+  };
+  sttWebSocket.onmessage = function(event) {
+    const message = JSON.parse(event.data);
+    if (message.type === "data") {
+      const transcriptChunk = message.data.transcript.replace(/<nospeech>/gi, "").replace(/<\/nospeech>/gi, "").trim();
+      if (transcriptChunk) {
+        logDebug('📩 Received DATA', { transcript: transcriptChunk, language_code: message.data.language_code || null, language_probability: message.data.language_probability || null });
+        sttFullTranscript += (sttFullTranscript ? " " : "") + transcriptChunk; renderSttTranscript();
+      }
+    } else if (message.type === "events") {
+      const signalType = message.data?.signal_type;
+      logDebug('⚡ Received EVENT', { signal_type: signalType });
+      if (signalType === "START_SPEECH") sttVadIndicator.classList.add('active');
+      else if (signalType === "END_SPEECH") sttVadIndicator.classList.remove('active');
+    } else if (message.type === "error") { logDebug('❌ Received ERROR', { error: message.data }); sttStatusText.innerText = "Server Error"; }
+    else { logDebug('❓ Received UNKNOWN MESSAGE', message); }
+  };
+  sttWebSocket.onerror = function(event) { logDebug('⚠️ WebSocket ERROR', { event: 'See browser console for details' }); sttStatusText.innerText = "WS Error"; };
+  sttWebSocket.onclose = function(event) {
+    logDebug('🔌 WebSocket CLOSED', { code: event.code, reason: event.reason, wasClean: event.wasClean });
+    sttVadIndicator.classList.remove('active');
+    if (sttIsRecording) { sttStatusText.innerText = "Disconnected unexpectedly."; stopRecording(true); }
+  };
+}
+async function startAudioProcessing() {
+  try {
+    logDebug('Requesting microphone access...');
+    sttMediaStream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, sampleRate: STT_SAMPLE_RATE } });
+    logDebug('🎤 Microphone access granted');
+    sttAudioContext = new AudioContext({ sampleRate: STT_SAMPLE_RATE, latencyHint: 'interactive' });
+    sttSource = sttAudioContext.createMediaStreamSource(sttMediaStream);
+    sttAnalyser = sttAudioContext.createAnalyser(); sttAnalyser.fftSize = 256; sttAnalyser.smoothingTimeConstant = 0.75;
+    sttProcessor = sttAudioContext.createScriptProcessor(2048, 1, 1);
+    sttProcessor.onaudioprocess = function(e) {
+      if (!sttIsRecording) return;
+      const inputData = e.inputBuffer.getChannelData(0);
+      const newBuffer = new Float32Array(sttAudioBuffer.length + inputData.length);
+      newBuffer.set(sttAudioBuffer, 0); newBuffer.set(inputData, sttAudioBuffer.length); sttAudioBuffer = newBuffer;
+      if (sttAudioBuffer.length >= STT_CHUNK_SIZE) {
+        const chunkToSend = sttAudioBuffer.slice(0, STT_CHUNK_SIZE); sttAudioBuffer = sttAudioBuffer.slice(STT_CHUNK_SIZE);
+        const int16Chunk = floatTo16BitPCM(chunkToSend); sendAudioChunk(int16Chunk);
+      }
+    };
+    sttSource.connect(sttAnalyser); sttSource.connect(sttProcessor); sttProcessor.connect(sttAudioContext.destination);
+    sttIsRecording = true; sttIsListening = true; sttStartBtn.disabled = true; sttStopBtn.disabled = false;
+    sttModeButtons.forEach(btn => btn.disabled = true); sttLangSelect.disabled = true;
+    sttStatusText.innerText = `Recording [mode: ${sttSelectedMode} | lang: ${sttSelectedLanguage}]...`;
+    sttVisPlaceholder.classList.add('hidden'); renderSttTranscript();
+    logDebug('🎙️ Audio processing started');
+  } catch (err) {
+    logDebug('❌ Microphone Error', { name: err.name, message: err.message });
+    sttStatusText.innerText = "Mic Error"; cleanupStt();
+  }
+}
+function startRecording() { sttFullTranscript = ""; sttAudioBuffer = new Float32Array(0); renderSttTranscript(); connectWebSocket(); }
+function stopRecording(forceStop = false) {
+  if (!sttIsRecording && !sttWebSocket) return;
+  sttIsRecording = false; sttStartBtn.disabled = false; sttStopBtn.disabled = true; sttStatusText.innerText = "Stopping...";
+  if (!forceStop && sttWebSocket && sttWebSocket.readyState === WebSocket.OPEN) {
+    logDebug('Sending FLUSH command to server...'); sttWebSocket.send(JSON.stringify({ type: "flush" }));
+    setTimeout(() => { cleanupStt(); }, 500);
+  } else { cleanupStt(); }
+}
+function cleanupStt() {
+  logDebug('Cleaning up resources...');
+  if (sttProcessor) { sttProcessor.disconnect(); sttProcessor = null; }
+  if (sttAnalyser) { sttAnalyser.disconnect(); sttAnalyser = null; }
+  if (sttSource) { sttSource.disconnect(); sttSource = null; }
+  if (sttAudioContext) { sttAudioContext.close(); sttAudioContext = null; }
+  if (sttMediaStream) { sttMediaStream.getTracks().forEach(track => track.stop()); sttMediaStream = null; }
+  if (sttWebSocket) { if (sttWebSocket.readyState === WebSocket.OPEN) sttWebSocket.close(); sttWebSocket = null; }
+  sttVadIndicator.classList.remove('active'); sttModeButtons.forEach(btn => btn.disabled = false); sttLangSelect.disabled = false;
+  sttIsListening = false;
+  if (sttStatusText.innerText.startsWith("Stopping") || sttStatusText.innerText.startsWith("Recording")) sttStatusText.innerText = "Idle";
+  sttVisPlaceholder.classList.remove('hidden'); renderSttTranscript();
+  logDebug('Cleanup complete.');
+}
+sttModeButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (sttIsRecording) { logDebug('Cannot change mode while recording'); return; }
+    sttModeButtons.forEach(b => b.classList.remove('active')); btn.classList.add('active');
+    sttSelectedMode = btn.dataset.mode; logDebug('Mode selected', { mode: sttSelectedMode });
+  });
+});
+sttLangSelect.addEventListener('change', () => {
+  if (sttIsRecording) { logDebug('Cannot change language while recording'); return; }
+  sttSelectedLanguage = sttLangSelect.value; logDebug('Language selected', { language: sttSelectedLanguage });
+});
+let sttLangOpen = false;
+sttLangNoticeHeader.addEventListener('click', () => { sttLangOpen = !sttLangOpen; sttLangNoticeBody.classList.toggle('open', sttLangOpen); sttLangNoticeToggle.textContent = sttLangOpen ? '▲ hide' : '▶ expand'; });
+let sttDebugCollapsed = false;
+sttDebugHeader.addEventListener('click', () => { sttDebugCollapsed = !sttDebugCollapsed; sttDebugLog.classList.toggle('collapsed', sttDebugCollapsed); sttDebugToggle.textContent = sttDebugCollapsed ? '▶ expand' : '▼ collapse'; });
 
-                audioContext = new AudioContext({ sampleRate: SAMPLE_RATE, latencyHint: 'interactive' });
-                source = audioContext.createMediaStreamSource(mediaStream);
+function initSttVisualizer() { sttVisCtx = sttVisualizer.getContext('2d'); resizeSttCanvas(); window.addEventListener('resize', resizeSttCanvas); drawSttVisualizer(); }
+function resizeSttCanvas() {
+  const dpr = window.devicePixelRatio || 1; const rect = sttVisualizer.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return;
+  sttVisualizer.width = rect.width * dpr; sttVisualizer.height = rect.height * dpr;
+  sttVisualizer.style.width = rect.width + 'px'; sttVisualizer.style.height = rect.height + 'px';
+  sttVisCtx.setTransform(1,0,0,1,0,0); sttVisCtx.scale(dpr, dpr);
+}
+function drawSttVisualizer() {
+  const rect = sttVisualizer.getBoundingClientRect(); const W = rect.width, H = rect.height;
+  if (W === 0 || H === 0) { requestAnimationFrame(drawSttVisualizer); return; }
+  sttVisCtx.clearRect(0,0,W,H);
+  if (sttAnalyser && sttIsRecording) {
+    const bufferLength = sttAnalyser.frequencyBinCount; const dataArray = new Uint8Array(bufferLength);
+    sttAnalyser.getByteFrequencyData(dataArray);
+    const barCount = 56, padding = 28, usableW = W - padding * 2, slotWidth = usableW / barCount, barWidth = Math.max(2, slotWidth * 0.55);
+    const centerY = H / 2, maxBarHeight = H * 0.82;
+    for (let i = 0; i < barCount; i++) {
+      const idx = Math.floor(Math.pow(i / barCount, 1.4) * bufferLength * 0.65);
+      const value = (dataArray[idx] || 0) / 255; const barHeight = Math.max(3, value * maxBarHeight);
+      const x = padding + i * slotWidth + (slotWidth - barWidth) / 2, y = centerY - barHeight / 2;
+      sttVisCtx.shadowColor = 'rgba(0, 217, 255, 0.55)'; sttVisCtx.shadowBlur = 12;
+      const grad = sttVisCtx.createLinearGradient(0, y, 0, y + barHeight);
+      grad.addColorStop(0, 'rgba(0, 217, 255, 0.95)'); grad.addColorStop(0.5, 'rgba(139, 92, 246, 0.95)'); grad.addColorStop(1, 'rgba(0, 217, 255, 0.95)');
+      sttVisCtx.fillStyle = grad; sttVisCtx.beginPath();
+      if (sttVisCtx.roundRect) sttVisCtx.roundRect(x, y, barWidth, barHeight, barWidth / 2);
+      else sttVisCtx.rect(x, y, barWidth, barHeight);
+      sttVisCtx.fill();
+    }
+    sttVisCtx.shadowBlur = 0;
+  } else {
+    const time = Date.now() / 1000;
+    sttVisCtx.strokeStyle = 'rgba(0, 217, 255, 0.22)'; sttVisCtx.lineWidth = 1.5;
+    sttVisCtx.shadowColor = 'rgba(0, 217, 255, 0.4)'; sttVisCtx.shadowBlur = 6; sttVisCtx.beginPath();
+    for (let x = 0; x <= W; x += 2) {
+      const y = H/2 + Math.sin((x + time * 80) * 0.015) * 5 + Math.sin((x + time * 30) * 0.035) * 2.5;
+      if (x === 0) sttVisCtx.moveTo(x, y); else sttVisCtx.lineTo(x, y);
+    }
+    sttVisCtx.stroke(); sttVisCtx.shadowBlur = 0;
+  }
+  requestAnimationFrame(drawSttVisualizer);
+}
+sttStartBtn.addEventListener('click', startRecording);
+sttStopBtn.addEventListener('click', () => stopRecording(false));
+window.addEventListener('beforeunload', () => { if (sttWebSocket) sttWebSocket.close(); });
 
-                // Analyser for visualizer
-                analyser = audioContext.createAnalyser();
-                analyser.fftSize = 256;
-                analyser.smoothingTimeConstant = 0.75;
+/* ===== GLOBAL ===== */
+let resizeTimer;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (!ttsState.isPlaying) drawStaticWaveform(); }, 150); });
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { if ($('tts-panel').classList.contains('active')) { e.preventDefault(); generateBtn.click(); } }
+  if (e.code === 'Space' && e.target === document.body && ttsState.currentAudio && $('tts-panel').classList.contains('active')) { e.preventDefault(); togglePlayPause(); }
+});
 
-                processor = audioContext.createScriptProcessor(2048, 1, 1);
-
-                processor.onaudioprocess = function(e) {
-                    if (!isRecording) return;
-                    const inputData = e.inputBuffer.getChannelData(0);
-                    const newBuffer = new Float32Array(audioBuffer.length + inputData.length);
-                    newBuffer.set(audioBuffer, 0);
-                    newBuffer.set(inputData, audioBuffer.length);
-                    audioBuffer = newBuffer;
-
-                    if (audioBuffer.length >= CHUNK_SIZE) {
-                        const chunkToSend = audioBuffer.slice(0, CHUNK_SIZE);
-                        audioBuffer = audioBuffer.slice(CHUNK_SIZE);
-                        const int16Chunk = floatTo16BitPCM(chunkToSend);
-                        sendAudioChunk(int16Chunk);
-                    }
-                };
-
-                source.connect(analyser);
-                source.connect(processor);
-                processor.connect(audioContext.destination);
-
-                isRecording = true;
-                isListening = true;
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                modeButtons.forEach(btn => btn.disabled = true);
-                langSelect.disabled = true;
-                statusText.innerText = `Recording [mode: ${selectedMode} | lang: ${selectedLanguage}]...`;
-                visPlaceholder.classList.add('hidden');
-                renderTranscript();
-                logDebug('🎙️ Audio processing started');
-
-            } catch (err) {
-                logDebug('❌ Microphone Error', { name: err.name, message: err.message });
-                statusText.innerText = "Mic Error";
-                cleanup();
-            }
-        }
-
-        // --- Start / Stop Controls ---
-        function startRecording() {
-            fullTranscript = "";
-            audioBuffer = new Float32Array(0);
-            renderTranscript();
-            connectWebSocket();
-        }
-
-        function stopRecording(forceStop = false) {
-            if (!isRecording && !webSocket) return;
-            isRecording = false;
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            statusText.innerText = "Stopping...";
-
-            if (!forceStop && webSocket && webSocket.readyState === WebSocket.OPEN) {
-                logDebug('Sending FLUSH command to server...');
-                webSocket.send(JSON.stringify({ type: "flush" }));
-                setTimeout(() => { cleanup(); }, 500);
-            } else {
-                cleanup();
-            }
-        }
-
-        function cleanup() {
-            logDebug('Cleaning up resources...');
-            if (processor) { processor.disconnect(); processor = null; }
-            if (analyser) { analyser.disconnect(); analyser = null; }
-            if (source) { source.disconnect(); source = null; }
-            if (audioContext) { audioContext.close(); audioContext = null; }
-            if (mediaStream) {
-                mediaStream.getTracks().forEach(track => track.stop());
-                mediaStream = null;
-            }
-            if (webSocket) {
-                if (webSocket.readyState === WebSocket.OPEN) webSocket.close();
-                webSocket = null;
-            }
-            vadIndicator.classList.remove('active');
-            modeButtons.forEach(btn => btn.disabled = false);
-            langSelect.disabled = false;
-            isListening = false;
-            if (statusText.innerText.startsWith("Stopping") || statusText.innerText.startsWith("Recording")) {
-                statusText.innerText = "Idle";
-            }
-            visPlaceholder.classList.remove('hidden');
-            renderTranscript();
-            logDebug('Cleanup complete.');
-        }
-
-        // --- Mode Selection ---
-        modeButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (isRecording) {
-                    logDebug('Cannot change mode while recording');
-                    return;
-                }
-                modeButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                selectedMode = btn.dataset.mode;
-                logDebug('Mode selected', { mode: selectedMode });
-            });
-        });
-
-        // --- Language Selection ---
-        langSelect.addEventListener('change', () => {
-            if (isRecording) {
-                logDebug('Cannot change language while recording');
-                return;
-            }
-            selectedLanguage = langSelect.value;
-            logDebug('Language selected', { language: selectedLanguage });
-        });
-
-        // --- Collapsible Language Notice ---
-        let langOpen = false;
-        langNoticeHeader.addEventListener('click', () => {
-            langOpen = !langOpen;
-            langNoticeBody.classList.toggle('open', langOpen);
-            langNoticeToggle.textContent = langOpen ? '▲ hide' : '▶ expand';
-        });
-
-        // --- Collapsible Debug Log ---
-        let debugCollapsed = false;
-        debugHeader.addEventListener('click', () => {
-            debugCollapsed = !debugCollapsed;
-            debugLog.classList.toggle('collapsed', debugCollapsed);
-            debugToggle.textContent = debugCollapsed ? '▶ expand' : '▼ collapse';
-        });
-
-        // --- Visualizer ---
-        function initVisualizer() {
-            visCtx = visualizer.getContext('2d');
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-            drawVisualizer();
-        }
-
-        function resizeCanvas() {
-            const dpr = window.devicePixelRatio || 1;
-            const rect = visualizer.getBoundingClientRect();
-            visualizer.width = rect.width * dpr;
-            visualizer.height = rect.height * dpr;
-            visualizer.style.width = rect.width + 'px';
-            visualizer.style.height = rect.height + 'px';
-            visCtx.setTransform(1, 0, 0, 1, 0, 0);
-            visCtx.scale(dpr, dpr);
-        }
-
-        function drawVisualizer() {
-            const rect = visualizer.getBoundingClientRect();
-            const W = rect.width;
-            const H = rect.height;
-
-            visCtx.clearRect(0, 0, W, H);
-
-            if (analyser && isRecording) {
-                const bufferLength = analyser.frequencyBinCount;
-                const dataArray = new Uint8Array(bufferLength);
-                analyser.getByteFrequencyData(dataArray);
-
-                const barCount = 56;
-                const padding = 28;
-                const usableW = W - padding * 2;
-                const slotWidth = usableW / barCount;
-                const barWidth = Math.max(2, slotWidth * 0.55);
-
-                const centerY = H / 2;
-                const maxBarHeight = H * 0.82;
-
-                for (let i = 0; i < barCount; i++) {
-                    // Log-ish distribution for nicer visuals
-                    const idx = Math.floor(Math.pow(i / barCount, 1.4) * bufferLength * 0.65);
-                    const value = (dataArray[idx] || 0) / 255;
-                    const barHeight = Math.max(3, value * maxBarHeight);
-
-                    const x = padding + i * slotWidth + (slotWidth - barWidth) / 2;
-                    const y = centerY - barHeight / 2;
-
-                    visCtx.shadowColor = 'rgba(0, 217, 255, 0.55)';
-                    visCtx.shadowBlur = 12;
-
-                    const grad = visCtx.createLinearGradient(0, y, 0, y + barHeight);
-                    grad.addColorStop(0, 'rgba(0, 217, 255, 0.95)');
-                    grad.addColorStop(0.5, 'rgba(139, 92, 246, 0.95)');
-                    grad.addColorStop(1, 'rgba(0, 217, 255, 0.95)');
-                    visCtx.fillStyle = grad;
-
-                    visCtx.beginPath();
-                    if (visCtx.roundRect) {
-                        visCtx.roundRect(x, y, barWidth, barHeight, barWidth / 2);
-                    } else {
-                        visCtx.rect(x, y, barWidth, barHeight);
-                    }
-                    visCtx.fill();
-                }
-                visCtx.shadowBlur = 0;
-            } else {
-                // Idle wave — gentle sine
-                const time = Date.now() / 1000;
-                visCtx.strokeStyle = 'rgba(0, 217, 255, 0.22)';
-                visCtx.lineWidth = 1.5;
-                visCtx.shadowColor = 'rgba(0, 217, 255, 0.4)';
-                visCtx.shadowBlur = 6;
-                visCtx.beginPath();
-                for (let x = 0; x <= W; x += 2) {
-                    const y = H/2 + Math.sin((x + time * 80) * 0.015) * 5 + Math.sin((x + time * 30) * 0.035) * 2.5;
-                    if (x === 0) visCtx.moveTo(x, y);
-                    else visCtx.lineTo(x, y);
-                }
-                visCtx.stroke();
-                visCtx.shadowBlur = 0;
-            }
-
-            visAnimId = requestAnimationFrame(drawVisualizer);
-        }
-
-        // --- Initialize ---
-        buildLanguageUI();
-        initVisualizer();
-        renderTranscript();
-
-        // Event Listeners
-        startBtn.addEventListener('click', startRecording);
-        stopBtn.addEventListener('click', () => stopRecording(false));
-
-        window.addEventListener('beforeunload', () => {
-            if (webSocket) webSocket.close();
-        });
-    </script>
+/* ===== INIT ===== */
+function init() {
+  renderTtsLanguages(); renderPhrases(); renderSpeakers();
+  updateCharCount(); updateSliderFill(paceSlider); updateSliderFill(tempSlider);
+  const lang = TTS_LANGUAGES.find(l => l.code === ttsState.language);
+  textInput.placeholder = `Type your text in ${lang.name} (${lang.script})...`;
+  textInput.value = lang.phrases[0]; updateCharCount();
+  requestAnimationFrame(drawStaticWaveform);
+  buildSttLanguageUI(); initSttVisualizer(); renderSttTranscript();
+}
+init();
+</script>
 </body>
 </html>
